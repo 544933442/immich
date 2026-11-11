@@ -9,20 +9,34 @@ export class BackupFolderRecord {
 
 /**
  * Application settings backed by Preferences.
- * Call init() once at ability startup; afterwards all accessors are sync.
+ * Call initSync()/init() once at ability startup; afterwards all accessors are sync.
  */
 export class ImmichSettings {
   private static prefs: preferences.Preferences | null = null;
 
-  static async init(context: Context): Promise<void> {
+  /** Synchronous initialization so language can be applied before first frame. */
+  static initSync(context: Context): void {
     if (ImmichSettings.prefs !== null) {
       return;
     }
-    ImmichSettings.prefs = await preferences.getPreferences(context, 'immich_settings');
+    ImmichSettings.prefs = preferences.getPreferencesSync(context, { name: 'immich_settings' });
     if (ImmichSettings.getDeviceId().length === 0) {
       ImmichSettings.prefs.putSync('deviceId', util.generateRandomUUID());
       ImmichSettings.prefs.flush();
     }
+  }
+
+  static async init(context: Context): Promise<void> {
+    ImmichSettings.initSync(context);
+  }
+
+  /** App language tag ('zh-Hans' | 'en-Latn-US'); defaults to Chinese. */
+  static getAppLanguage(): string {
+    return ImmichSettings.getString('appLanguage', 'zh-Hans');
+  }
+
+  static setAppLanguage(language: string): void {
+    ImmichSettings.putString('appLanguage', language);
   }
 
   static getDeviceId(): string {

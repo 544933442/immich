@@ -34,6 +34,11 @@
       "name": "assetPicker",
       "pageSourceFile": "src/main/ets/view/library/AssetPickerPage.ets",
       "buildFunction": "AssetPickerBuilder"
+    },
+    {
+      "name": "places",
+      "pageSourceFile": "src/main/ets/view/library/PlacesPage.ets",
+      "buildFunction": "PlacesBuilder"
     }
   ]
 }

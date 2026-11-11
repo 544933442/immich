@@ -16,6 +16,8 @@
 import { AbilityConstant, ConfigurationConstant, UIAbility, Want } from '@kit.AbilityKit';
 import { hilog } from '@kit.PerformanceAnalysisKit';
 import { window } from '@kit.ArkUI';
+import { i18n } from '@kit.LocalizationKit';
+import { ImmichSettings } from 'data';
 import { AppRuntime } from '../runtime/AppRuntime';
 
 const DOMAIN = 0x0000;
@@ -23,6 +25,13 @@ const DOMAIN = 0x0000;
 export default class EntryAbility extends UIAbility {
   onCreate(want: Want, launchParam: AbilityConstant.LaunchParam): void {
     AppRuntime.setAbilityContext(this.context);
+    // Apply the persisted app language (default Chinese) before the first frame.
+    ImmichSettings.initSync(this.context);
+    try {
+      i18n.System.setAppPreferredLanguage(ImmichSettings.getAppLanguage());
+    } catch (err) {
+      hilog.error(DOMAIN, 'testTag', 'setAppPreferredLanguage failed: %{public}s', JSON.stringify(err));
+    }
     AppRuntime.init(this.context).catch((err: Error): void => {
       hilog.error(DOMAIN, 'testTag', 'AppRuntime init failed: %{public}s', err.message);
     });

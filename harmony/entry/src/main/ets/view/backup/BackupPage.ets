@@ -87,9 +87,10 @@ export struct BackupPage {
               .alignItems(HorizontalAlign.Start)
               .layoutWeight(1)
 
-              Text('✕')
-                .fontSize(16)
-                .fontColor($r('app.color.immich_text_secondary'))
+              Image($r('app.media.ic_close'))
+                .width(16)
+                .height(16)
+                .fillColor($r('app.color.immich_text_secondary'))
                 .padding(10)
                 .onClick(() => {
                   this.removeFolder(folder);

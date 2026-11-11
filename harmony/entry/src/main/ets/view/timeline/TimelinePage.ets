@@ -114,42 +114,66 @@ export struct TimelinePage {
       Divider()
         .color($r('app.color.immich_outline'))
       Row() {
-        Text($r('app.string.action_favorite'))
-          .fontSize(14)
-          .fontColor($r('app.color.immich_text_primary'))
-          .layoutWeight(1)
-          .textAlign(TextAlign.Center)
-          .padding({ top: 12, bottom: 12 })
-          .onClick(() => {
-            this.batchFavorite();
-          })
-        Text($r('app.string.action_to_album'))
-          .fontSize(14)
-          .fontColor($r('app.color.immich_text_primary'))
-          .layoutWeight(1)
-          .textAlign(TextAlign.Center)
-          .padding({ top: 12, bottom: 12 })
-          .onClick(() => {
-            this.openAlbumChooser();
-          })
-        Text($r('app.string.action_archive'))
-          .fontSize(14)
-          .fontColor($r('app.color.immich_text_primary'))
-          .layoutWeight(1)
-          .textAlign(TextAlign.Center)
-          .padding({ top: 12, bottom: 12 })
-          .onClick(() => {
-            this.batchArchive();
-          })
-        Text($r('app.string.action_trash'))
-          .fontSize(14)
-          .fontColor($r('app.color.immich_error'))
-          .layoutWeight(1)
-          .textAlign(TextAlign.Center)
-          .padding({ top: 12, bottom: 12 })
-          .onClick(() => {
-            this.confirmBatchTrash();
-          })
+        Column({ space: 4 }) {
+          Image($r('app.media.ic_favorite'))
+            .width(20)
+            .height(20)
+            .fillColor($r('app.color.immich_text_primary'))
+          Text($r('app.string.action_favorite'))
+            .fontSize(12)
+            .fontColor($r('app.color.immich_text_primary'))
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Center)
+        .padding({ top: 8, bottom: 8 })
+        .onClick(() => {
+          this.batchFavorite();
+        })
+        Column({ space: 4 }) {
+          Image($r('app.media.ic_photo_album'))
+            .width(20)
+            .height(20)
+            .fillColor($r('app.color.immich_text_primary'))
+          Text($r('app.string.action_to_album'))
+            .fontSize(12)
+            .fontColor($r('app.color.immich_text_primary'))
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Center)
+        .padding({ top: 8, bottom: 8 })
+        .onClick(() => {
+          this.openAlbumChooser();
+        })
+        Column({ space: 4 }) {
+          Image($r('app.media.ic_archive'))
+            .width(20)
+            .height(20)
+            .fillColor($r('app.color.immich_text_primary'))
+          Text($r('app.string.action_archive'))
+            .fontSize(12)
+            .fontColor($r('app.color.immich_text_primary'))
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Center)
+        .padding({ top: 8, bottom: 8 })
+        .onClick(() => {
+          this.batchArchive();
+        })
+        Column({ space: 4 }) {
+          Image($r('app.media.ic_delete'))
+            .width(20)
+            .height(20)
+            .fillColor($r('app.color.immich_error'))
+          Text($r('app.string.action_trash'))
+            .fontSize(12)
+            .fontColor($r('app.color.immich_error'))
+        }
+        .layoutWeight(1)
+        .alignItems(HorizontalAlign.Center)
+        .padding({ top: 8, bottom: 8 })
+        .onClick(() => {
+          this.confirmBatchTrash();
+        })
       }
       .width('100%')
     }
@@ -240,13 +264,16 @@ export struct TimelinePage {
       Row({ space: 2 }) {
         ForEach(row.cells, (cell: ImmichAsset | null, index: number) => {
           if (cell !== null) {
-            Column() {
-              AssetThumbnail({ asset: cell })
-            }
-            .aspectRatio(1)
-            .layoutWeight(1)
-            .onClick(() => {
-              this.openViewer(row.bucket, row.startIndex + index);
+            TimelineCell({
+              asset: cell,
+              selection: this.selection,
+              selectionMode: this.selectionMode,
+              onOpen: () => {
+                this.openViewer(row.bucket, row.startIndex + index);
+              },
+              onStartSelect: () => {
+                this.enterSelectionMode();
+              }
             })
           } else {
             Column()
@@ -362,6 +389,178 @@ export struct TimelinePage {
   private openMemoryViewer(memory: ImmichMemory): void {
     const param: string = JSON.stringify({ memoryId: memory.id, index: 0 });
     this.pathStack.pushPathByName('viewer', param, false);
+  }
+
+  private enterSelectionMode(): void {
+    this.selectionMode = true;
+  }
+
+  private exitSelection(): void {
+    this.selectionMode = false;
+    this.selection.clear();
+  }
+
+  private async batchFavorite(): Promise<void> {
+    if (this.actionBusy || this.selection.count() === 0) {
+      return;
+    }
+    this.actionBusy = true;
+    try {
+      await ImmichAssetApi.setFavorite(this.selection.selectedIds(), true);
+    } catch (err) {
+      this.actionBusy = false;
+      return;
+    }
+    this.actionBusy = false;
+    this.exitSelection();
+    this.reload();
+  }
+
+  private async batchArchive(): Promise<void> {
+    if (this.actionBusy || this.selection.count() === 0) {
+      return;
+    }
+    this.actionBusy = true;
+    try {
+      await ImmichAssetApi.setArchived(this.selection.selectedIds(), true);
+    } catch (err) {
+      this.actionBusy = false;
+      return;
+    }
+    this.actionBusy = false;
+    this.exitSelection();
+    this.reload();
+  }
+
+  private confirmBatchTrash(): void {
+    if (this.actionBusy || this.selection.count() === 0) {
+      return;
+    }
+    this.getUIContext().showAlertDialog({
+      message: $r('app.string.batch_trash_confirm'),
+      primaryButton: {
+        value: $r('app.string.common_cancel'),
+        action: (): void => {
+        }
+      },
+      secondaryButton: {
+        value: $r('app.string.viewer_delete_ok'),
+        fontColor: $r('app.color.immich_error'),
+        action: (): void => {
+          this.batchTrash();
+        }
+      }
+    });
+  }
+
+  private async batchTrash(): Promise<void> {
+    if (this.actionBusy || this.selection.count() === 0) {
+      return;
+    }
+    this.actionBusy = true;
+    try {
+      await ImmichAssetApi.deleteAssets(this.selection.selectedIds(), false);
+    } catch (err) {
+      this.actionBusy = false;
+      return;
+    }
+    this.actionBusy = false;
+    this.exitSelection();
+    this.reload();
+  }
+
+  private async openAlbumChooser(): Promise<void> {
+    if (this.actionBusy || this.selection.count() === 0) {
+      return;
+    }
+    this.albumChooserVisible = true;
+    this.albumsLoading = true;
+    try {
+      this.albums = await ImmichAlbumApi.getAlbums();
+    } catch (err) {
+      this.albums = [];
+    }
+    this.albumsLoading = false;
+  }
+
+  private loadString(name: string): string {
+    const context: Context | undefined = this.getUIContext().getHostContext();
+    if (context === undefined) {
+      return '';
+    }
+    return context.resourceManager.getStringByNameSync(name);
+  }
+
+  private async confirmAlbumPick(album: ImmichAlbum): Promise<void> {
+    if (this.actionBusy || this.selection.count() === 0) {
+      return;
+    }
+    this.actionBusy = true;
+    try {
+      await ImmichAlbumApi.addAssetsToAlbums([album.id], this.selection.selectedIds());
+    } catch (err) {
+      this.actionBusy = false;
+      this.albumChooserVisible = false;
+      return;
+    }
+    this.actionBusy = false;
+    this.albumChooserVisible = false;
+    this.exitSelection();
+    this.reload();
+  }
+}
+
+/**
+ * One selectable timeline cell: thumbnail with selection overlay when the
+ * timeline is in multi-select mode.
+ */
+@ComponentV2
+struct TimelineCell {
+  @Param asset: ImmichAsset = new ImmichAsset();
+  @Param selection: AssetSelection = new AssetSelection();
+  @Param selectionMode: boolean = false;
+  @Event onOpen: () => void = (): void => {};
+  @Event onStartSelect: () => void = (): void => {};
+
+  build() {
+    Stack({ alignContent: Alignment.TopEnd }) {
+      AssetThumbnail({ asset: this.asset })
+      if (this.selectionMode && this.selection.isSelected(this.asset.id)) {
+        Column()
+          .width('100%')
+          .height('100%')
+          .backgroundColor('rgba(0, 0, 0, 0.35)')
+        Column() {
+          Image($r('app.media.ic_check'))
+            .width(14)
+            .height(14)
+            .fillColor(Color.White)
+        }
+        .width(22)
+        .height(22)
+        .borderRadius(11)
+        .backgroundColor($r('app.color.immich_primary'))
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
+        .margin(6)
+      }
+    }
+    .aspectRatio(1)
+    .layoutWeight(1)
+    .onClick(() => {
+      if (this.selectionMode) {
+        this.selection.toggle(this.asset.id);
+      } else {
+        this.onOpen();
+      }
+    })
+    .gesture(LongPressGesture()
+      .onAction(() => {
+        if (!this.selectionMode) {
+          this.onStartSelect();
+        }
+        this.selection.toggle(this.asset.id);
+      }))
   }
 }
 

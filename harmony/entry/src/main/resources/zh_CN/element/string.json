@@ -323,6 +323,62 @@
     {
       "name": "viewer_remove_confirm",
       "value": "将这张照片从相册中移除？"
+    },
+    {
+      "name": "selection_selected",
+      "value": "已选"
+    },
+    {
+      "name": "action_favorite",
+      "value": "收藏"
+    },
+    {
+      "name": "action_to_album",
+      "value": "加相册"
+    },
+    {
+      "name": "action_archive",
+      "value": "归档"
+    },
+    {
+      "name": "action_trash",
+      "value": "删除"
+    },
+    {
+      "name": "album_chooser_title",
+      "value": "选择相册"
+    },
+    {
+      "name": "batch_trash_confirm",
+      "value": "将所选照片移入回收站？"
+    },
+    {
+      "name": "settings_cache_title",
+      "value": "存储"
+    },
+    {
+      "name": "settings_cache_size",
+      "value": "缓存大小"
+    },
+    {
+      "name": "settings_cache_clear",
+      "value": "清理"
+    },
+    {
+      "name": "settings_cache_clear_confirm",
+      "value": "清理所有已缓存的照片和视频？"
+    },
+    {
+      "name": "library_places",
+      "value": "地点"
+    },
+    {
+      "name": "library_places_desc",
+      "value": "地图上的照片"
+    },
+    {
+      "name": "settings_language",
+      "value": "语言"
     }
   ]
 }

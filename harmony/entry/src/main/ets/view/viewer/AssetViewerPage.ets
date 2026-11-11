@@ -21,6 +21,8 @@ interface ViewerParamRaw {
   searchQuery?: string;
   /** Memory card source. */
   memoryId?: string;
+  /** Single-asset source (map marker etc.). */
+  assetId?: string;
 }
 
 /**
@@ -40,12 +42,15 @@ export struct AssetViewerPage {
   @Local isChinese: boolean = false;
   @Local videoPath: string = '';
   @Local videoLoading: boolean = false;
+  @Local offlineReady: boolean = false;
+  @Local downloading: boolean = false;
   private pathStack: NavPathStack = new NavPathStack();
   private swiperController: SwiperController = new SwiperController();
   private pendingBucket: string = '';
   private query: TimelineQuery = new TimelineQuery();
   private searchQuery: string = '';
   private memoryId: string = '';
+  private assetIdParam: string = '';
   private searchPage: number = 1;
   private searchHasMore: boolean = false;
   private searchLoadingMore: boolean = false;
@@ -138,6 +143,9 @@ export struct AssetViewerPage {
         if (raw.memoryId !== undefined && raw.memoryId !== null) {
           this.memoryId = raw.memoryId;
         }
+        if (raw.assetId !== undefined && raw.assetId !== null) {
+          this.assetIdParam = raw.assetId;
+        }
         this.query = TimelineQuery.fromRaw(raw.query);
       }
       this.isChinese = i18n.System.getAppPreferredLanguage().startsWith('zh');
@@ -206,25 +214,50 @@ export struct AssetViewerPage {
         .layoutWeight(1)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
-      Text(this.currentFavorite ? '★' : '☆')
-        .fontSize(24)
-        .fontColor(this.currentFavorite ? Color.Yellow : Color.White)
+      Image(this.currentFavorite ? $r('app.media.ic_favorite_active') : $r('app.media.ic_favorite'))
+        .width(24)
+        .height(24)
+        .fillColor(this.currentFavorite ? $r('app.color.immich_primary') : Color.White)
         .padding(10)
         .onClick(() => {
           this.toggleFavorite();
         })
-      if (this.albumIdOf().length > 0) {
-        Text($r('app.string.viewer_remove'))
-          .fontSize(13)
-          .fontColor(Color.White)
-          .padding({ left: 10, right: 10, top: 12, bottom: 12 })
+      if (this.downloading) {
+        LoadingProgress()
+          .width(22)
+          .height(22)
+          .color(Color.White)
+          .padding(10)
+      } else {
+        Image($r('app.media.ic_download'))
+          .width(22)
+          .height(22)
+          .fillColor(this.offlineReady ? '#4ADE80' : Color.White)
+          .padding(10)
           .onClick(() => {
-            this.confirmRemoveFromAlbum();
+            this.downloadCurrentOriginal();
           })
       }
-      Text('✕')
-        .fontSize(20)
-        .fontColor(Color.White)
+      if (this.albumIdOf().length > 0) {
+        Row({ space: 4 }) {
+          Image($r('app.media.ic_remove_circle'))
+            .width(16)
+            .height(16)
+            .fillColor(Color.White)
+          Text($r('app.string.viewer_remove'))
+            .fontSize(13)
+            .fontColor(Color.White)
+        }
+        .alignItems(VerticalAlign.Center)
+        .padding({ left: 8, right: 8, top: 12, bottom: 12 })
+        .onClick(() => {
+          this.confirmRemoveFromAlbum();
+        })
+      }
+      Image($r('app.media.ic_delete'))
+        .width(22)
+        .height(22)
+        .fillColor(Color.White)
         .padding(10)
         .onClick(() => {
           this.confirmDelete();
@@ -267,6 +300,9 @@ export struct AssetViewerPage {
           }
         }
         this.applyAssets(found);
+      } else if (this.assetIdParam.length > 0) {
+        const asset: ImmichAsset = await ImmichAssetApi.getAssetById(this.assetIdParam);
+        this.applyAssets([asset]);
       } else {
         const assets: ImmichAsset[] = await ImmichAssetApi.getTimeBucketAssets(this.pendingBucket, this.query);
         this.applyAssets(assets);
@@ -288,6 +324,7 @@ export struct AssetViewerPage {
       this.index = 0;
     }
     this.currentFavorite = this.assets[this.index].isFavorite;
+    this.refreshOfflineState();
   }
 
   private async loadMoreSearch(): Promise<void> {
@@ -316,6 +353,7 @@ export struct AssetViewerPage {
     if (position >= 0 && position < this.assets.length) {
       this.currentFavorite = this.assets[position].isFavorite;
     }
+    this.refreshOfflineState();
     if (this.searchQuery.length > 0 && position >= this.assets.length - 8) {
       this.loadMoreSearch();
     }
@@ -445,6 +483,31 @@ export struct AssetViewerPage {
       this.errorText = '';
     } finally {
       this.videoLoading = false;
+    }
+  }
+
+  /** Recompute the offline indicator for the current asset. */
+  private refreshOfflineState(): void {
+    if (this.index < 0 || this.index >= this.assets.length) {
+      this.offlineReady = false;
+      return;
+    }
+    this.offlineReady = AssetImageLoader.isAvailableOffline(this.assets[this.index]);
+  }
+
+  /** Download the current asset original for offline use. */
+  private async downloadCurrentOriginal(): Promise<void> {
+    if (this.busy || this.downloading || this.index >= this.assets.length) {
+      return;
+    }
+    this.downloading = true;
+    try {
+      await AssetImageLoader.downloadOriginal(this.assets[this.index]);
+      this.offlineReady = true;
+    } catch (err) {
+      // indicator keeps previous state on failure
+    } finally {
+      this.downloading = false;
     }
   }
 

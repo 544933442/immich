@@ -83,6 +83,11 @@ export class ImageDiskCache {
     this.saveManifest();
   }
 
+  /** Total bytes currently held by the cache. */
+  sizeBytes(): number {
+    return this.totalBytes;
+  }
+
   clear(): void {
     this.index.forEach((entry: DiskCacheEntry): void => {
       try {

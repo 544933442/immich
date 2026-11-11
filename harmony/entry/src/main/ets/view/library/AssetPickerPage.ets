@@ -230,15 +230,18 @@ struct PickerCell {
           .width('100%')
           .height('100%')
           .backgroundColor('rgba(0, 0, 0, 0.35)')
-        Text('✓')
-          .fontSize(18)
-          .fontWeight(FontWeight.Bold)
-          .fontColor(Color.White)
-          .width(24)
-          .height(24)
-          .textAlign(TextAlign.Center)
-          .borderRadius(12)
-          .backgroundColor($r('app.color.immich_primary'))
+        Column() {
+          Image($r('app.media.ic_check'))
+            .width(16)
+            .height(16)
+            .fillColor(Color.White)
+        }
+        .width(24)
+        .height(24)
+        .borderRadius(12)
+        .backgroundColor($r('app.color.immich_primary'))
+        .justifyContent(FlexAlign.Center)
+        .alignItems(HorizontalAlign.Center)
       }
     }
     .aspectRatio(1)

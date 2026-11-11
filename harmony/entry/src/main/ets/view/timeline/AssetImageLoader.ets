@@ -12,6 +12,7 @@ export class AssetImageLoader {
   private static thumbs: ImageDiskCache | null = null;
   private static previews: ImageDiskCache | null = null;
   private static videos: ImageDiskCache | null = null;
+  private static originals: ImageDiskCache | null = null;
   private static mem: Map<string, PixelMap> = new Map<string, PixelMap>();
   private static inflight: Map<string, Promise<PixelMap>> = new Map<string, Promise<PixelMap>>();
   private static videoInflight: Map<string, Promise<string>> = new Map<string, Promise<string>>();
@@ -25,6 +26,9 @@ export class AssetImageLoader {
     }
     if (AssetImageLoader.videos === null) {
       AssetImageLoader.videos = await ImageDiskCache.create(context, 'videos', 512 * 1024 * 1024);
+    }
+    if (AssetImageLoader.originals === null) {
+      AssetImageLoader.originals = await ImageDiskCache.create(context, 'originals', 1024 * 1024 * 1024);
     }
   }
 
@@ -105,6 +109,90 @@ export class AssetImageLoader {
     } finally {
       AssetImageLoader.videoInflight.delete(key);
     }
+  }
+
+  /** Local path of the cached image original, or null when not downloaded. */
+  static originalPathIfCached(asset: ImmichAsset): string | null {
+    const cache: ImageDiskCache | null = AssetImageLoader.originals;
+    if (cache === null) {
+      return null;
+    }
+    return cache.get(`original_${asset.id}`);
+  }
+
+  /** Local path of the cached video file, or null when not downloaded. */
+  static videoPathIfCached(asset: ImmichAsset): string | null {
+    const cache: ImageDiskCache | null = AssetImageLoader.videos;
+    if (cache === null) {
+      return null;
+    }
+    return cache.get(`video_${asset.id}`);
+  }
+
+  /** True when the asset original is available offline. */
+  static isAvailableOffline(asset: ImmichAsset): boolean {
+    if (!asset.isImage) {
+      return AssetImageLoader.videoPathIfCached(asset) !== null;
+    }
+    return AssetImageLoader.originalPathIfCached(asset) !== null;
+  }
+
+  /** Download (or reuse) the original file for offline use; returns the local path. */
+  static async downloadOriginal(asset: ImmichAsset): Promise<string> {
+    if (!asset.isImage) {
+      return AssetImageLoader.loadVideoFile(asset);
+    }
+    const key: string = `original_${asset.id}`;
+    const cache: ImageDiskCache = AssetImageLoader.originals!;
+    const existing: string | null = cache.get(key);
+    if (existing !== null) {
+      return existing;
+    }
+    const buffer: ArrayBuffer = await ImmichAssetApi.downloadAsset(asset.id, 'original');
+    cache.put(key, buffer);
+    const path: string | null = cache.get(key);
+    if (path === null) {
+      throw new Error('original cache write failed');
+    }
+    return path;
+  }
+
+  /** Total bytes held by all disk caches (0 before init). */
+  static totalCacheBytes(): number {
+    let total: number = 0;
+    if (AssetImageLoader.thumbs !== null) {
+      total += AssetImageLoader.thumbs.sizeBytes();
+    }
+    if (AssetImageLoader.previews !== null) {
+      total += AssetImageLoader.previews.sizeBytes();
+    }
+    if (AssetImageLoader.videos !== null) {
+      total += AssetImageLoader.videos.sizeBytes();
+    }
+    if (AssetImageLoader.originals !== null) {
+      total += AssetImageLoader.originals.sizeBytes();
+    }
+    return total;
+  }
+
+  /** Wipe every disk cache and release in-memory pixel maps. */
+  static clearAllCaches(): void {
+    if (AssetImageLoader.thumbs !== null) {
+      AssetImageLoader.thumbs.clear();
+    }
+    if (AssetImageLoader.previews !== null) {
+      AssetImageLoader.previews.clear();
+    }
+    if (AssetImageLoader.videos !== null) {
+      AssetImageLoader.videos.clear();
+    }
+    if (AssetImageLoader.originals !== null) {
+      AssetImageLoader.originals.clear();
+    }
+    AssetImageLoader.mem.forEach((pm: PixelMap): void => {
+      pm.release();
+    });
+    AssetImageLoader.mem.clear();
   }
 
   private static async load(cacheKey: string, assetId: string, size: string,

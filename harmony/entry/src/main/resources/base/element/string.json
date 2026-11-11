@@ -335,6 +335,62 @@
     {
       "name": "viewer_remove_confirm",
       "value": "Remove this photo from the album?"
+    },
+    {
+      "name": "selection_selected",
+      "value": "Selected"
+    },
+    {
+      "name": "action_favorite",
+      "value": "Favorite"
+    },
+    {
+      "name": "action_to_album",
+      "value": "Add to album"
+    },
+    {
+      "name": "action_archive",
+      "value": "Archive"
+    },
+    {
+      "name": "action_trash",
+      "value": "Trash"
+    },
+    {
+      "name": "album_chooser_title",
+      "value": "Choose an album"
+    },
+    {
+      "name": "batch_trash_confirm",
+      "value": "Move the selected photos to trash?"
+    },
+    {
+      "name": "settings_cache_title",
+      "value": "Storage"
+    },
+    {
+      "name": "settings_cache_size",
+      "value": "Cache size"
+    },
+    {
+      "name": "settings_cache_clear",
+      "value": "Clear"
+    },
+    {
+      "name": "settings_cache_clear_confirm",
+      "value": "Clear all cached photos and videos?"
+    },
+    {
+      "name": "library_places",
+      "value": "Places"
+    },
+    {
+      "name": "library_places_desc",
+      "value": "Your photos on the map"
+    },
+    {
+      "name": "settings_language",
+      "value": "Language"
     }
   ]
 }
