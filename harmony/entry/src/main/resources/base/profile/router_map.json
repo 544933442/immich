@@ -1,0 +1,39 @@
+{
+  "routerMap": [
+    {
+      "name": "viewer",
+      "pageSourceFile": "src/main/ets/view/viewer/AssetViewerPage.ets",
+      "buildFunction": "ViewerBuilder"
+    },
+    {
+      "name": "albums",
+      "pageSourceFile": "src/main/ets/view/library/AlbumsPage.ets",
+      "buildFunction": "AlbumsBuilder"
+    },
+    {
+      "name": "assetGrid",
+      "pageSourceFile": "src/main/ets/view/library/AssetGridPage.ets",
+      "buildFunction": "AssetGridBuilder"
+    },
+    {
+      "name": "people",
+      "pageSourceFile": "src/main/ets/view/library/PeoplePage.ets",
+      "buildFunction": "PeopleBuilder"
+    },
+    {
+      "name": "favorites",
+      "pageSourceFile": "src/main/ets/view/library/FavoritesPage.ets",
+      "buildFunction": "FavoritesBuilder"
+    },
+    {
+      "name": "trash",
+      "pageSourceFile": "src/main/ets/view/library/TrashPage.ets",
+      "buildFunction": "TrashBuilder"
+    },
+    {
+      "name": "assetPicker",
+      "pageSourceFile": "src/main/ets/view/library/AssetPickerPage.ets",
+      "buildFunction": "AssetPickerBuilder"
+    }
+  ]
+}

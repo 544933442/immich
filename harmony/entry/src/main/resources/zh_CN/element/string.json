@@ -1,0 +1,328 @@
+{
+  "string": [
+    {
+      "name": "tab_photos",
+      "value": "照片"
+    },
+    {
+      "name": "tab_backup",
+      "value": "备份"
+    },
+    {
+      "name": "tab_library",
+      "value": "资料库"
+    },
+    {
+      "name": "tab_search",
+      "value": "搜索"
+    },
+    {
+      "name": "search_hint",
+      "value": "搜索照片…"
+    },
+    {
+      "name": "search_button",
+      "value": "搜索"
+    },
+    {
+      "name": "search_prompt",
+      "value": "按人物、地点、事物等搜索照片"
+    },
+    {
+      "name": "search_empty",
+      "value": "未找到结果"
+    },
+    {
+      "name": "memories_title",
+      "value": "回忆"
+    },
+    {
+      "name": "viewer_empty",
+      "value": "没有照片"
+    },
+    {
+      "name": "people_title",
+      "value": "人物"
+    },
+    {
+      "name": "people_desc",
+      "value": "照片中识别出的人物"
+    },
+    {
+      "name": "people_empty",
+      "value": "还没有识别到人物"
+    },
+    {
+      "name": "people_unnamed",
+      "value": "未命名"
+    },
+    {
+      "name": "grid_empty",
+      "value": "没有照片"
+    },
+    {
+      "name": "tab_settings",
+      "value": "设置"
+    },
+    {
+      "name": "login_title",
+      "value": "Immich"
+    },
+    {
+      "name": "login_subtitle",
+      "value": "登录到你的服务器"
+    },
+    {
+      "name": "login_server_url",
+      "value": "服务器地址"
+    },
+    {
+      "name": "login_email",
+      "value": "邮箱"
+    },
+    {
+      "name": "login_password",
+      "value": "密码"
+    },
+    {
+      "name": "login_button",
+      "value": "登录"
+    },
+    {
+      "name": "login_fill_all",
+      "value": "请填写服务器地址、邮箱和密码"
+    },
+    {
+      "name": "login_loading",
+      "value": "正在登录…"
+    },
+    {
+      "name": "timeline_title",
+      "value": "照片"
+    },
+    {
+      "name": "timeline_empty",
+      "value": "还没有照片"
+    },
+    {
+      "name": "timeline_loading",
+      "value": "加载中…"
+    },
+    {
+      "name": "common_retry",
+      "value": "重试"
+    },
+    {
+      "name": "common_cancel",
+      "value": "取消"
+    },
+    {
+      "name": "common_delete",
+      "value": "删除"
+    },
+    {
+      "name": "common_done",
+      "value": "完成"
+    },
+    {
+      "name": "viewer_date_unknown",
+      "value": "未知日期"
+    },
+    {
+      "name": "viewer_delete_confirm",
+      "value": "将此资源移入回收站？"
+    },
+    {
+      "name": "viewer_delete_ok",
+      "value": "移入回收站"
+    },
+    {
+      "name": "viewer_video_play",
+      "value": "点击播放"
+    },
+    {
+      "name": "viewer_loading_video",
+      "value": "正在加载视频…"
+    },
+    {
+      "name": "backup_folders_title",
+      "value": "备份文件夹"
+    },
+    {
+      "name": "backup_add_folder",
+      "value": "添加文件夹"
+    },
+    {
+      "name": "backup_now",
+      "value": "立即备份"
+    },
+    {
+      "name": "backup_stop",
+      "value": "停止"
+    },
+    {
+      "name": "backup_auto",
+      "value": "自动备份"
+    },
+    {
+      "name": "backup_auto_desc",
+      "value": "打开应用时自动开始备份"
+    },
+    {
+      "name": "backup_pending",
+      "value": "待备份"
+    },
+    {
+      "name": "backup_status_idle",
+      "value": "备份未运行"
+    },
+    {
+      "name": "backup_status_scanning",
+      "value": "正在扫描文件夹…"
+    },
+    {
+      "name": "backup_status_uploading",
+      "value": "正在上传"
+    },
+    {
+      "name": "backup_empty_hint",
+      "value": "添加文件夹，将照片和视频备份到此 Immich 服务器"
+    },
+    {
+      "name": "settings_user_title",
+      "value": "账户"
+    },
+    {
+      "name": "settings_server",
+      "value": "服务器"
+    },
+    {
+      "name": "settings_email",
+      "value": "邮箱"
+    },
+    {
+      "name": "settings_name",
+      "value": "姓名"
+    },
+    {
+      "name": "settings_logout",
+      "value": "退出登录"
+    },
+    {
+      "name": "settings_logout_confirm",
+      "value": "退出该服务器的登录？"
+    },
+    {
+      "name": "settings_version",
+      "value": "版本"
+    },
+    {
+      "name": "library_title",
+      "value": "资料库"
+    },
+    {
+      "name": "library_albums",
+      "value": "相册"
+    },
+    {
+      "name": "library_albums_desc",
+      "value": "浏览你的相册"
+    },
+    {
+      "name": "library_favorites",
+      "value": "收藏"
+    },
+    {
+      "name": "library_favorites_desc",
+      "value": "你加星的照片和视频"
+    },
+    {
+      "name": "library_trash",
+      "value": "回收站"
+    },
+    {
+      "name": "library_trash_desc",
+      "value": "已删除、等待清理的照片"
+    },
+    {
+      "name": "library_items",
+      "value": "项"
+    },
+    {
+      "name": "albums_empty",
+      "value": "还没有相册"
+    },
+    {
+      "name": "album_empty",
+      "value": "该相册暂无照片"
+    },
+    {
+      "name": "favorites_empty",
+      "value": "还没有收藏照片。在查看器中为照片加星后即可在此看到。"
+    },
+    {
+      "name": "trash_empty",
+      "value": "回收站为空"
+    },
+    {
+      "name": "backup_failed_count",
+      "value": "失败"
+    },
+    {
+      "name": "common_create",
+      "value": "创建"
+    },
+    {
+      "name": "album_create",
+      "value": "新建相册"
+    },
+    {
+      "name": "album_name_hint",
+      "value": "相册名称"
+    },
+    {
+      "name": "library_archive",
+      "value": "归档"
+    },
+    {
+      "name": "library_archive_desc",
+      "value": "你归档的照片和视频"
+    },
+    {
+      "name": "album_rename",
+      "value": "重命名"
+    },
+    {
+      "name": "album_delete",
+      "value": "删除相册"
+    },
+    {
+      "name": "album_delete_confirm",
+      "value": "删除该相册？照片仍会保留在资料库中。"
+    },
+    {
+      "name": "album_add_photos",
+      "value": "添加照片"
+    },
+    {
+      "name": "picker_title",
+      "value": "选择照片"
+    },
+    {
+      "name": "picker_empty",
+      "value": "没有可选择的照片"
+    },
+    {
+      "name": "picker_done",
+      "value": "完成"
+    },
+    {
+      "name": "viewer_remove",
+      "value": "移出"
+    },
+    {
+      "name": "viewer_remove_confirm",
+      "value": "将这张照片从相册中移除？"
+    }
+  ]
+}

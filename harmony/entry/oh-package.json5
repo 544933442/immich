@@ -1,0 +1,14 @@
+{
+  "name": "entry",
+  "version": "1.0.0",
+  "description": "Immich HarmonyOS entry",
+  "main": "",
+  "author": "",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "commons": "file:../commons",
+    "network": "file:../network",
+    "data": "file:../data",
+    "backup": "file:../backup"
+  }
+}

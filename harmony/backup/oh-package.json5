@@ -1,0 +1,13 @@
+{
+  "name": "backup",
+  "version": "1.0.0",
+  "description": "Immich backup: media sync, upload queue, background task",
+  "main": "Index.ets",
+  "author": "",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "commons": "file:../commons",
+    "network": "file:../network",
+    "data": "file:../data"
+  }
+}

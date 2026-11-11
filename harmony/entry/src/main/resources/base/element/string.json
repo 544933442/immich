@@ -1,0 +1,340 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "Immich HarmonyOS client"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "Immich client"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "Immich"
+    },
+    {
+      "name": "tab_photos",
+      "value": "Photos"
+    },
+    {
+      "name": "tab_backup",
+      "value": "Backup"
+    },
+    {
+      "name": "tab_library",
+      "value": "Library"
+    },
+    {
+      "name": "tab_search",
+      "value": "Search"
+    },
+    {
+      "name": "search_hint",
+      "value": "Search photos…"
+    },
+    {
+      "name": "search_button",
+      "value": "Search"
+    },
+    {
+      "name": "search_prompt",
+      "value": "Search photos by people, places, objects and more"
+    },
+    {
+      "name": "search_empty",
+      "value": "No results found"
+    },
+    {
+      "name": "memories_title",
+      "value": "Memories"
+    },
+    {
+      "name": "viewer_empty",
+      "value": "No photos"
+    },
+    {
+      "name": "people_title",
+      "value": "People"
+    },
+    {
+      "name": "people_desc",
+      "value": "People recognized in your photos"
+    },
+    {
+      "name": "people_empty",
+      "value": "No people detected yet"
+    },
+    {
+      "name": "people_unnamed",
+      "value": "Unnamed"
+    },
+    {
+      "name": "grid_empty",
+      "value": "No photos"
+    },
+    {
+      "name": "tab_settings",
+      "value": "Settings"
+    },
+    {
+      "name": "login_title",
+      "value": "Immich"
+    },
+    {
+      "name": "login_subtitle",
+      "value": "Sign in to your server"
+    },
+    {
+      "name": "login_server_url",
+      "value": "Server URL"
+    },
+    {
+      "name": "login_email",
+      "value": "Email"
+    },
+    {
+      "name": "login_password",
+      "value": "Password"
+    },
+    {
+      "name": "login_button",
+      "value": "Sign in"
+    },
+    {
+      "name": "login_fill_all",
+      "value": "Please fill in server, email and password"
+    },
+    {
+      "name": "login_loading",
+      "value": "Signing in…"
+    },
+    {
+      "name": "timeline_title",
+      "value": "Photos"
+    },
+    {
+      "name": "timeline_empty",
+      "value": "No photos yet"
+    },
+    {
+      "name": "timeline_loading",
+      "value": "Loading…"
+    },
+    {
+      "name": "common_retry",
+      "value": "Retry"
+    },
+    {
+      "name": "common_cancel",
+      "value": "Cancel"
+    },
+    {
+      "name": "common_delete",
+      "value": "Delete"
+    },
+    {
+      "name": "common_done",
+      "value": "Done"
+    },
+    {
+      "name": "viewer_date_unknown",
+      "value": "Unknown date"
+    },
+    {
+      "name": "viewer_delete_confirm",
+      "value": "Move this asset to trash?"
+    },
+    {
+      "name": "viewer_delete_ok",
+      "value": "Move to trash"
+    },
+    {
+      "name": "viewer_video_play",
+      "value": "Tap to play"
+    },
+    {
+      "name": "viewer_loading_video",
+      "value": "Loading video…"
+    },
+    {
+      "name": "backup_folders_title",
+      "value": "Backup folders"
+    },
+    {
+      "name": "backup_add_folder",
+      "value": "Add folder"
+    },
+    {
+      "name": "backup_now",
+      "value": "Back up now"
+    },
+    {
+      "name": "backup_stop",
+      "value": "Stop"
+    },
+    {
+      "name": "backup_auto",
+      "value": "Automatic backup"
+    },
+    {
+      "name": "backup_auto_desc",
+      "value": "Start backup automatically when the app opens"
+    },
+    {
+      "name": "backup_pending",
+      "value": "Pending"
+    },
+    {
+      "name": "backup_status_idle",
+      "value": "Backup is idle"
+    },
+    {
+      "name": "backup_status_scanning",
+      "value": "Scanning folders…"
+    },
+    {
+      "name": "backup_status_uploading",
+      "value": "Uploading"
+    },
+    {
+      "name": "backup_empty_hint",
+      "value": "Add a folder to back up your photos and videos to this Immich server"
+    },
+    {
+      "name": "settings_user_title",
+      "value": "Account"
+    },
+    {
+      "name": "settings_server",
+      "value": "Server"
+    },
+    {
+      "name": "settings_email",
+      "value": "Email"
+    },
+    {
+      "name": "settings_name",
+      "value": "Name"
+    },
+    {
+      "name": "settings_logout",
+      "value": "Sign out"
+    },
+    {
+      "name": "settings_logout_confirm",
+      "value": "Sign out of this server?"
+    },
+    {
+      "name": "settings_version",
+      "value": "Version"
+    },
+    {
+      "name": "library_title",
+      "value": "Library"
+    },
+    {
+      "name": "library_albums",
+      "value": "Albums"
+    },
+    {
+      "name": "library_albums_desc",
+      "value": "Browse your albums"
+    },
+    {
+      "name": "library_favorites",
+      "value": "Favorites"
+    },
+    {
+      "name": "library_favorites_desc",
+      "value": "Photos and videos you starred"
+    },
+    {
+      "name": "library_trash",
+      "value": "Trash"
+    },
+    {
+      "name": "library_trash_desc",
+      "value": "Deleted photos awaiting cleanup"
+    },
+    {
+      "name": "library_items",
+      "value": "items"
+    },
+    {
+      "name": "albums_empty",
+      "value": "No albums yet"
+    },
+    {
+      "name": "album_empty",
+      "value": "This album has no photos"
+    },
+    {
+      "name": "favorites_empty",
+      "value": "No favorite photos yet. Star a photo in the viewer to see it here."
+    },
+    {
+      "name": "trash_empty",
+      "value": "Trash is empty"
+    },
+    {
+      "name": "backup_failed_count",
+      "value": "Failed"
+    },
+    {
+      "name": "common_create",
+      "value": "Create"
+    },
+    {
+      "name": "album_create",
+      "value": "New album"
+    },
+    {
+      "name": "album_name_hint",
+      "value": "Album name"
+    },
+    {
+      "name": "library_archive",
+      "value": "Archive"
+    },
+    {
+      "name": "library_archive_desc",
+      "value": "Photos and videos you archived"
+    },
+    {
+      "name": "album_rename",
+      "value": "Rename"
+    },
+    {
+      "name": "album_delete",
+      "value": "Delete album"
+    },
+    {
+      "name": "album_delete_confirm",
+      "value": "Delete this album? Photos stay in your library."
+    },
+    {
+      "name": "album_add_photos",
+      "value": "Add photos"
+    },
+    {
+      "name": "picker_title",
+      "value": "Select photos"
+    },
+    {
+      "name": "picker_empty",
+      "value": "No photos to select"
+    },
+    {
+      "name": "picker_done",
+      "value": "Done"
+    },
+    {
+      "name": "viewer_remove",
+      "value": "Remove"
+    },
+    {
+      "name": "viewer_remove_confirm",
+      "value": "Remove this photo from the album?"
+    }
+  ]
+}
