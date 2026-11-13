@@ -39,6 +39,11 @@
       "name": "places",
       "pageSourceFile": "src/main/ets/view/library/PlacesPage.ets",
       "buildFunction": "PlacesBuilder"
+    },
+    {
+      "name": "excludeAlbums",
+      "pageSourceFile": "src/main/ets/view/backup/ExcludeAlbumsPage.ets",
+      "buildFunction": "ExcludeAlbumsBuilder"
     }
   ]
 }

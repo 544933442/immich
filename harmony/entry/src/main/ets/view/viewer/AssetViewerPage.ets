@@ -214,29 +214,38 @@ export struct AssetViewerPage {
         .layoutWeight(1)
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
-      Image(this.currentFavorite ? $r('app.media.ic_favorite_active') : $r('app.media.ic_favorite'))
-        .width(24)
-        .height(24)
-        .fillColor(this.currentFavorite ? $r('app.color.immich_primary') : Color.White)
-        .padding(10)
-        .onClick(() => {
-          this.toggleFavorite();
-        })
+      Row() {
+        Image(this.currentFavorite ? $r('app.media.ic_favorite_active') : $r('app.media.ic_favorite'))
+          .width(28)
+          .height(28)
+          .fillColor(this.currentFavorite ? $r('app.color.immich_primary') : Color.White)
+      }
+      .padding(12)
+      .borderRadius(26)
+      .backgroundColor('#1AFFFFFF')
+      .onClick(() => {
+        this.toggleFavorite();
+      })
       if (this.downloading) {
         LoadingProgress()
-          .width(22)
-          .height(22)
+          .width(26)
+          .height(26)
           .color(Color.White)
-          .padding(10)
+          .padding(13)
+          .borderRadius(26)
       } else {
-        Image($r('app.media.ic_download'))
-          .width(22)
-          .height(22)
-          .fillColor(this.offlineReady ? '#4ADE80' : Color.White)
-          .padding(10)
-          .onClick(() => {
-            this.downloadCurrentOriginal();
-          })
+        Row() {
+          Image($r('app.media.ic_download'))
+            .width(26)
+            .height(26)
+            .fillColor(this.offlineReady ? '#4ADE80' : Color.White)
+        }
+        .padding(13)
+        .borderRadius(26)
+        .backgroundColor('#1AFFFFFF')
+        .onClick(() => {
+          this.downloadCurrentOriginal();
+        })
       }
       if (this.albumIdOf().length > 0) {
         Row({ space: 4 }) {
@@ -254,14 +263,18 @@ export struct AssetViewerPage {
           this.confirmRemoveFromAlbum();
         })
       }
-      Image($r('app.media.ic_delete'))
-        .width(22)
-        .height(22)
-        .fillColor(Color.White)
-        .padding(10)
-        .onClick(() => {
-          this.confirmDelete();
-        })
+      Row() {
+        Image($r('app.media.ic_delete'))
+          .width(26)
+          .height(26)
+          .fillColor(Color.White)
+      }
+      .padding(13)
+      .borderRadius(26)
+      .backgroundColor('#1AFFFFFF')
+      .onClick(() => {
+        this.confirmDelete();
+      })
     }
     .width('100%')
     .padding({ left: 16, right: 8, top: 8, bottom: 8 })

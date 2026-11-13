@@ -94,6 +94,35 @@ export class ImmichSettings {
     ImmichSettings.putString('backupFolders', JSON.stringify(folders));
   }
 
+  /** Whether the system media library (gallery) is included in backup. */
+  static getGalleryBackupEnabled(): boolean {
+    return ImmichSettings.getBoolean('galleryBackupEnabled', false);
+  }
+
+  static setGalleryBackupEnabled(enabled: boolean): void {
+    const prefs: preferences.Preferences | null = ImmichSettings.prefs;
+    if (prefs === null) {
+      return;
+    }
+    prefs.putSync('galleryBackupEnabled', enabled);
+    prefs.flush();
+  }
+
+  /** Album URIs whose content is excluded from gallery backup. */
+  static getGalleryExcludedAlbums(): string[] {
+    const raw: string = ImmichSettings.getString('galleryExcludedAlbums', '[]');
+    try {
+      const parsed: string[] = JSON.parse(raw) as string[];
+      return parsed;
+    } catch (err) {
+      return [];
+    }
+  }
+
+  static setGalleryExcludedAlbums(albumUris: string[]): void {
+    ImmichSettings.putString('galleryExcludedAlbums', JSON.stringify(albumUris));
+  }
+
   /** Fallback (non-asset-store) token storage key, internal use only. */
   static getFallbackToken(): string {
     return ImmichSettings.getString('fallbackToken', '');

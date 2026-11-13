@@ -11,11 +11,14 @@ interface DiskCacheEntry {
  * LRU disk cache for downloaded images, backed by a JSON manifest.
  */
 export class ImageDiskCache {
+  private static readonly FLUSH_DELAY_MS: number = 500;
   private baseDir: string = '';
   private manifestPath: string = '';
   private maxBytes: number = 0;
   private index: Map<string, DiskCacheEntry> = new Map<string, DiskCacheEntry>();
   private totalBytes: number = 0;
+  private manifestDirty: boolean = false;
+  private flushTimer: number = -1;
 
   private constructor() {
   }
@@ -35,6 +38,7 @@ export class ImageDiskCache {
     }
     cache.loadManifest();
     cache.validateEntries();
+    cache.sweepOrphans();
     return cache;
   }
 
@@ -49,14 +53,14 @@ export class ImageDiskCache {
       if (!fileIo.accessSync(path)) {
         this.index.delete(key);
         this.totalBytes -= entry.size;
-        this.saveManifest();
+        this.scheduleFlush();
         return null;
       }
     } catch (err) {
       return null;
     }
     entry.lastAccess = Date.now();
-    this.saveManifest();
+    this.scheduleFlush();
     return path;
   }
 
@@ -80,7 +84,7 @@ export class ImageDiskCache {
     this.totalBytes += entry.size;
     this.index.set(key, entry);
     this.evictIfNeeded();
-    this.saveManifest();
+    this.scheduleFlush();
   }
 
   /** Total bytes currently held by the cache. */
@@ -89,6 +93,11 @@ export class ImageDiskCache {
   }
 
   clear(): void {
+    if (this.flushTimer >= 0) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = -1;
+    }
+    this.manifestDirty = false;
     this.index.forEach((entry: DiskCacheEntry): void => {
       try {
         const path: string = `${this.baseDir}/${entry.fileName}`;
@@ -102,6 +111,44 @@ export class ImageDiskCache {
     this.index.clear();
     this.totalBytes = 0;
     this.saveManifest();
+  }
+
+  /** Mark the manifest dirty and flush it once after a short idle window. */
+  private scheduleFlush(): void {
+    this.manifestDirty = true;
+    if (this.flushTimer >= 0) {
+      return;
+    }
+    this.flushTimer = setTimeout((): void => {
+      this.flushTimer = -1;
+      if (this.manifestDirty) {
+        this.manifestDirty = false;
+        this.saveManifest();
+      }
+    }, ImageDiskCache.FLUSH_DELAY_MS);
+  }
+
+  /** Delete cached files that are no longer referenced by the manifest. */
+  private sweepOrphans(): void {
+    try {
+      const names: string[] = fileIo.listFileSync(this.baseDir);
+      const referenced: Set<string> = new Set<string>();
+      this.index.forEach((entry: DiskCacheEntry): void => {
+        referenced.add(entry.fileName);
+      });
+      for (const name of names) {
+        if (name === 'manifest.json' || referenced.has(name)) {
+          continue;
+        }
+        try {
+          fileIo.unlinkSync(`${this.baseDir}/${name}`);
+        } catch (err) {
+          // ignore individual removal errors
+        }
+      }
+    } catch (err) {
+      // sweep is best-effort
+    }
   }
 
   private evictIfNeeded(): void {

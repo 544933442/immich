@@ -17,6 +17,8 @@ export class BackupStateHolder {
   @Trace failedCount: number = 0;
   /** Last completed scan total, for UI display. */
   @Trace pendingCount: number = 0;
+  /** Number of gallery albums currently excluded from backup. */
+  @Trace excludedAlbumCount: number = 0;
   @Trace lastError: string = '';
 }
 

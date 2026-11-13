@@ -3,19 +3,61 @@ import { util } from '@kit.ArkTS';
 import { ImageDiskCache, ThumbHash, ThumbHashImage } from 'commons';
 import { ImmichAsset, ImmichAssetApi, ImmichPeopleApi } from 'network';
 
+/** Cancelable handle for a queued thumbnail load. */
+export class ThumbJob {
+  readonly assetId: string;
+  private cancelled: boolean = false;
+  private onLoaded: (pm: PixelMap) => void;
+  private onFailed: (err: Error) => void;
+
+  constructor(assetId: string, onLoaded: (pm: PixelMap) => void, onFailed: (err: Error) => void) {
+    this.assetId = assetId;
+    this.onLoaded = onLoaded;
+    this.onFailed = onFailed;
+  }
+
+  /** Stop the job if it has not delivered yet (in-flight downloads still finish and cache). */
+  cancel(): void {
+    this.cancelled = true;
+  }
+
+  isCancelled(): boolean {
+    return this.cancelled;
+  }
+
+  deliver(pm: PixelMap): void {
+    if (!this.cancelled) {
+      this.onLoaded(pm);
+    }
+  }
+
+  fail(err: Error): void {
+    if (!this.cancelled) {
+      this.onFailed(err);
+    }
+  }
+}
+
 /**
  * Three-tier image loader for server assets:
  * in-memory PixelMap cache -> disk cache -> authorized network download.
+ * Thumbnail loads run through a bounded-concurrency queue so fast scrolling
+ * over huge libraries cannot trigger request or decode storms.
  */
 export class AssetImageLoader {
   private static readonly MEM_CACHE_LIMIT: number = 300;
+  private static readonly PH_CACHE_LIMIT: number = 600;
+  private static readonly MAX_THUMB_CONCURRENCY: number = 6;
   private static thumbs: ImageDiskCache | null = null;
   private static previews: ImageDiskCache | null = null;
   private static videos: ImageDiskCache | null = null;
   private static originals: ImageDiskCache | null = null;
   private static mem: Map<string, PixelMap> = new Map<string, PixelMap>();
+  private static ph: Map<string, PixelMap> = new Map<string, PixelMap>();
   private static inflight: Map<string, Promise<PixelMap>> = new Map<string, Promise<PixelMap>>();
   private static videoInflight: Map<string, Promise<string>> = new Map<string, Promise<string>>();
+  private static thumbQueue: ThumbJob[] = [];
+  private static activeThumbs: number = 0;
 
   static async init(context: Context): Promise<void> {
     if (AssetImageLoader.thumbs === null) {
@@ -39,8 +81,49 @@ export class AssetImageLoader {
 
   /** Grid thumbnail by asset id (album covers etc.). */
   static async loadThumbnailById(id: string): Promise<PixelMap> {
-    const key: string = `thumb_${id}`;
-    return AssetImageLoader.load(key, id, 'thumbnail', AssetImageLoader.thumbs!);
+    return new Promise<PixelMap>((resolve, reject): void => {
+      AssetImageLoader.requestThumbnailById(id, resolve, reject);
+    });
+  }
+
+  /** Queue a grid thumbnail load for an on-screen cell; cancel it when the cell goes off-screen. */
+  static requestThumbnail(asset: ImmichAsset, onLoaded: (pm: PixelMap) => void,
+    onFailed: (err: Error) => void): ThumbJob {
+    return AssetImageLoader.requestThumbnailById(asset.id, onLoaded, onFailed);
+  }
+
+  /** Queue a thumbnail load by asset id, bounded by MAX_THUMB_CONCURRENCY. */
+  static requestThumbnailById(id: string, onLoaded: (pm: PixelMap) => void,
+    onFailed: (err: Error) => void): ThumbJob {
+    const job: ThumbJob = new ThumbJob(id, onLoaded, onFailed);
+    AssetImageLoader.thumbQueue.push(job);
+    AssetImageLoader.pumpThumbs();
+    return job;
+  }
+
+  private static pumpThumbs(): void {
+    while (AssetImageLoader.activeThumbs < AssetImageLoader.MAX_THUMB_CONCURRENCY) {
+      const job: ThumbJob | undefined = AssetImageLoader.thumbQueue.shift();
+      if (job === undefined) {
+        break;
+      }
+      if (job.isCancelled()) {
+        continue;
+      }
+      AssetImageLoader.activeThumbs++;
+      const key: string = `thumb_${job.assetId}`;
+      AssetImageLoader.load(key, job.assetId, 'thumbnail', AssetImageLoader.thumbs!)
+        .then((pm: PixelMap): void => {
+          job.deliver(pm);
+        })
+        .catch((err: Error): void => {
+          job.fail(err);
+        })
+        .finally((): void => {
+          AssetImageLoader.activeThumbs--;
+          AssetImageLoader.pumpThumbs();
+        });
+    }
   }
 
   /** Full-width preview for the viewer. */
@@ -55,7 +138,7 @@ export class AssetImageLoader {
       return null;
     }
     const key: string = `ph_${asset.id}`;
-    const hit: PixelMap | undefined = AssetImageLoader.mem.get(key);
+    const hit: PixelMap | undefined = AssetImageLoader.ph.get(key);
     if (hit !== undefined) {
       return hit;
     }
@@ -71,7 +154,7 @@ export class AssetImageLoader {
         pixelFormat: image.PixelMapFormat.RGBA_8888
       };
       const pm: PixelMap = await image.createPixelMap(buffer, opts);
-      AssetImageLoader.remember(key, pm);
+      AssetImageLoader.rememberPh(key, pm);
       return pm;
     } catch (err) {
       return null;
@@ -193,12 +276,19 @@ export class AssetImageLoader {
       pm.release();
     });
     AssetImageLoader.mem.clear();
+    AssetImageLoader.ph.forEach((pm: PixelMap): void => {
+      pm.release();
+    });
+    AssetImageLoader.ph.clear();
   }
 
   private static async load(cacheKey: string, assetId: string, size: string,
     cache: ImageDiskCache): Promise<PixelMap> {
     const memHit: PixelMap | undefined = AssetImageLoader.mem.get(cacheKey);
     if (memHit !== undefined) {
+      // LRU touch: refresh insertion order so recently shown cells survive eviction.
+      AssetImageLoader.mem.delete(cacheKey);
+      AssetImageLoader.mem.set(cacheKey, memHit);
       return memHit;
     }
     const pending: Promise<PixelMap> | undefined = AssetImageLoader.inflight.get(cacheKey);
@@ -219,6 +309,8 @@ export class AssetImageLoader {
     const key: string = `person_${personId}`;
     const memHit: PixelMap | undefined = AssetImageLoader.mem.get(key);
     if (memHit !== undefined) {
+      AssetImageLoader.mem.delete(key);
+      AssetImageLoader.mem.set(key, memHit);
       return memHit;
     }
     const pending: Promise<PixelMap> | undefined = AssetImageLoader.inflight.get(key);
@@ -304,5 +396,19 @@ export class AssetImageLoader {
       }
     }
     AssetImageLoader.mem.set(key, pm);
+  }
+
+  private static rememberPh(key: string, pm: PixelMap): void {
+    if (AssetImageLoader.ph.size >= AssetImageLoader.PH_CACHE_LIMIT) {
+      const oldest: string | null = AssetImageLoader.ph.keys().next().value ?? null;
+      if (oldest !== null) {
+        const evicted: PixelMap | undefined = AssetImageLoader.ph.get(oldest);
+        AssetImageLoader.ph.delete(oldest);
+        if (evicted !== undefined) {
+          evicted.release();
+        }
+      }
+    }
+    AssetImageLoader.ph.set(key, pm);
   }
 }

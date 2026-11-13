@@ -29,3 +29,7 @@ vite.config.js.timestamp-*
 *.tsbuildinfo
 *.tsbuildInfo
 misc/release/notes.md
+
+# Local AI agent memory & DevEco scratch data (never publish)
+.workbuddy/
+.deveco-tmp/

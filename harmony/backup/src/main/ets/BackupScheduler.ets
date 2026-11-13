@@ -28,6 +28,12 @@ export class BackupScheduler {
 
   /** Register the periodic backup work (best-effort). */
   static enable(): void {
+    // Re-registering an existing workId fails with 9700005, so stop first.
+    try {
+      workScheduler.stopWork(BackupScheduler.buildWork());
+    } catch (err) {
+      // not registered yet
+    }
     try {
       workScheduler.startWork(BackupScheduler.buildWork());
       hilog.info(DOMAIN, 'ImmichBackup', 'startWork submitted');
@@ -50,7 +56,7 @@ export class BackupScheduler {
   private static buildWork(): workScheduler.WorkInfo {
     const work: workScheduler.WorkInfo = {
       workId: BackupScheduler.WORK_ID,
-      bundleName: 'app.alextran.immich',
+      bundleName: 'app.yyzh999.immich',
       abilityName: 'BackupWorkScheduler',
       isPersisted: true,
       networkType: workScheduler.NetworkType.NETWORK_TYPE_ANY,

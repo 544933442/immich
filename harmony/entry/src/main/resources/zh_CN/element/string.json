@@ -149,8 +149,52 @@
       "value": "备份文件夹"
     },
     {
+      "name": "backup_gallery",
+      "value": "备份图库"
+    },
+    {
+      "name": "backup_gallery_desc",
+      "value": "备份系统图库中的全部照片和视频"
+    },
+    {
+      "name": "backup_gallery_perm_denied",
+      "value": "未获图库访问权限，请在 设置 > 隐私 > 权限管理 中开启"
+    },
+    {
+      "name": "backup_exclude_albums",
+      "value": "排除相册"
+    },
+    {
+      "name": "backup_exclude_albums_hint",
+      "value": "所选相册中的内容不会备份"
+    },
+    {
+      "name": "backup_exclude_count",
+      "value": "%s 个相册"
+    },
+    {
+      "name": "backup_exclude_none",
+      "value": "无"
+    },
+    {
+      "name": "backup_albums_empty",
+      "value": "未找到相册"
+    },
+    {
+      "name": "perm_media_read_reason",
+      "value": "用于将图库中的照片和视频备份到 Immich 服务器"
+    },
+    {
       "name": "backup_add_folder",
       "value": "添加文件夹"
+    },
+    {
+      "name": "backup_remove_folder",
+      "value": "移除"
+    },
+    {
+      "name": "backup_remove_folder_confirm",
+      "value": "确定移除备份文件夹“%s”吗？已上传的文件仍会保留在服务器上。"
     },
     {
       "name": "backup_now",

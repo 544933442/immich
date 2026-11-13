@@ -1,5 +1,5 @@
 import { ImmichAsset } from 'network';
-import { AssetImageLoader } from './AssetImageLoader';
+import { AssetImageLoader, ThumbJob } from './AssetImageLoader';
 
 /**
  * One grid cell: thumbhash blur placeholder + asynchronously loaded
@@ -10,17 +10,27 @@ export struct AssetThumbnail {
   @Param asset: ImmichAsset = new ImmichAsset();
   @Local loaded: PixelMap | null = null;
   @Local placeholder: PixelMap | null = null;
+  private job: ThumbJob | null = null;
 
   aboutToAppear(): void {
     const asset: ImmichAsset = this.asset;
     AssetImageLoader.thumbhashPixelMap(asset).then((pm: PixelMap | null): void => {
       this.placeholder = pm;
     });
-    AssetImageLoader.loadThumbnail(asset).then((pm: PixelMap): void => {
+    this.job = AssetImageLoader.requestThumbnail(asset, (pm: PixelMap): void => {
+      this.job = null;
       this.loaded = pm;
-    }).catch((err: Error): void => {
+    }, (err: Error): void => {
       // leave the placeholder in place on failure
+      this.job = null;
     });
+  }
+
+  aboutToDisappear(): void {
+    if (this.job !== null) {
+      this.job.cancel();
+      this.job = null;
+    }
   }
 
   build() {

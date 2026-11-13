@@ -39,7 +39,7 @@ export class AppRuntime {
     AppRuntime.context = context;
     await ImmichSettings.init(context);
     AppRuntime.db = await ImmichDb.create(context);
-    AppRuntime.engine = new BackupEngine(AppRuntime.db);
+    AppRuntime.engine = new BackupEngine(context, AppRuntime.db);
     await AssetImageLoader.init(context);
     const server: string = ImmichSettings.getServerUrl();
     const token: string = await CredentialStore.getToken();
@@ -79,7 +79,7 @@ export class AppRuntime {
       await ImmichBackupNotifier.requestPermission(abilityContext);
     }
     try {
-      await ImmichBackgroundTask.start(context, 'app.alextran.immich', 'EntryAbility');
+      await ImmichBackgroundTask.start(context, 'app.yyzh999.immich', 'EntryAbility');
     } catch (err) {
       // background task is an optimization; continue in foreground
     }

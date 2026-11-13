@@ -1,4 +1,7 @@
 import { AsyncMutex } from 'commons';
+import { fileIo as fs } from '@kit.CoreFileKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
+import { util } from '@kit.ArkTS';
 import {
   ImmichAssetApi,
   ImmichUploadResult,
@@ -7,6 +10,7 @@ import {
 } from 'network';
 import { ImmichDb, ImmichSettings, LocalAssetRecord, UploadState } from 'data';
 import { FolderMediaScanner } from './FolderMediaScanner';
+import { GalleryMediaScanner, GALLERY_FOLDER_URI } from './GalleryMediaScanner';
 import { ImmichBackupNotifier } from './ImmichBackupNotifier';
 import { backupState } from './state/BackupStateHolder';
 
@@ -20,10 +24,12 @@ export class BackupEngine {
   private static readonly MAX_ATTEMPTS = 3;
   private static readonly RETRY_BASE_DELAY_MS = 2000;
 
+  private context: Context;
   private db: ImmichDb;
   private mutex: AsyncMutex = new AsyncMutex();
 
-  constructor(db: ImmichDb) {
+  constructor(context: Context, db: ImmichDb) {
+    this.context = context;
     this.db = db;
   }
 
@@ -31,12 +37,8 @@ export class BackupEngine {
   async refreshPending(): Promise<number> {
     return this.mutex.run(async (): Promise<number> => {
       await this.scanFolders();
-      const folders = ImmichSettings.getBackupFolders();
-      const uris: string[] = [];
-      for (const folder of folders) {
-        uris.push(folder.uri);
-      }
-      const pending: LocalAssetRecord[] = await this.db.getPendingAssets(uris);
+      await this.scanGallery();
+      const pending: LocalAssetRecord[] = await this.db.getPendingAssets(this.collectFolderUris());
       backupState.pendingCount = pending.length;
       return pending.length;
     });
@@ -53,12 +55,8 @@ export class BackupEngine {
       try {
         backupState.phase = 'scanning';
         await this.scanFolders();
-        const folders = ImmichSettings.getBackupFolders();
-        const uris: string[] = [];
-        for (const folder of folders) {
-          uris.push(folder.uri);
-        }
-        const pending: LocalAssetRecord[] = await this.db.getPendingAssets(uris);
+        await this.scanGallery();
+        const pending: LocalAssetRecord[] = await this.db.getPendingAssets(this.collectFolderUris());
         backupState.totalCount = pending.length;
         backupState.doneCount = 0;
         backupState.failedCount = 0;
@@ -169,8 +167,17 @@ export class BackupEngine {
     backupState.progressSent = 0;
     backupState.progressTotal = rec.size;
     await this.db.setState(rec.uri, UploadState.UPLOADING);
+    let stagedPath: string = '';
     try {
-      const request: UploadAssetRequest = BackupEngine.buildRequest(rec);
+      let uploadPath: string = rec.path;
+      if (rec.folderUri === GALLERY_FOLDER_URI) {
+        stagedPath = BackupEngine.stageMediaFile(this.context, rec.path);
+        uploadPath = stagedPath;
+      }
+      const request: UploadAssetRequest = BackupEngine.buildRequest(rec, uploadPath);
+      hilog.info(0x0001, 'ImmichBackup',
+        'upload name=%{public}s path=%{public}s size=%{public}d mtime=%{public}d',
+        rec.name, uploadPath, rec.size, rec.mtimeMs);
       const result: ImmichUploadResult = await ImmichAssetApi.uploadAsset(request,
         (sent: number, total: number): void => {
           backupState.progressSent = sent;
@@ -181,15 +188,39 @@ export class BackupEngine {
         backupState.lastError = `unexpected upload status: ${result.status}`;
       }
     } finally {
+      if (stagedPath.length > 0) {
+        try {
+          fs.unlinkSync(stagedPath);
+        } catch (err) {
+          // staging cleanup is best-effort
+        }
+      }
       backupState.currentFile = '';
       backupState.progressSent = 0;
       backupState.progressTotal = 0;
     }
   }
 
-  private static buildRequest(rec: LocalAssetRecord): UploadAssetRequest {
+  /**
+   * Media-library files cannot be uploaded straight from their URI, so copy
+   * them into the cache directory first and return the staged path.
+   */
+  private static stageMediaFile(context: Context, mediaUri: string): string {
+    const stagedPath: string = `${context.cacheDir}/upload_${util.generateRandomUUID()}`;
+    const src: fs.File = fs.openSync(mediaUri, fs.OpenMode.READ_ONLY);
+    const dest: fs.File = fs.openSync(stagedPath, fs.OpenMode.READ_WRITE | fs.OpenMode.CREATE);
+    try {
+      fs.copyFileSync(src.fd, dest.fd);
+    } finally {
+      fs.closeSync(src);
+      fs.closeSync(dest);
+    }
+    return stagedPath;
+  }
+
+  private static buildRequest(rec: LocalAssetRecord, uploadPath: string): UploadAssetRequest {
     const request: UploadAssetRequest = new UploadAssetRequest();
-    request.filePath = rec.path;
+    request.filePath = uploadPath;
     request.fileName = rec.name;
     request.contentType = FolderMediaScanner.contentTypeOf(rec.name);
     request.deviceAssetId = `${rec.name}-${rec.size}-${rec.mtimeMs}`;
@@ -221,14 +252,41 @@ export class BackupEngine {
     }
   }
 
+  /** URIs of all active backup sources: persisted folders + optional gallery. */
+  private collectFolderUris(): string[] {
+    const uris: string[] = [];
+    const folders = ImmichSettings.getBackupFolders();
+    for (const folder of folders) {
+      uris.push(folder.uri);
+    }
+    if (ImmichSettings.getGalleryBackupEnabled()) {
+      uris.push(GALLERY_FOLDER_URI);
+    }
+    return uris;
+  }
+
+  /** Scan the media library when gallery backup is enabled. */
+  private async scanGallery(): Promise<void> {
+    if (!ImmichSettings.getGalleryBackupEnabled()) {
+      return;
+    }
+    try {
+      const records: LocalAssetRecord[] = await GalleryMediaScanner.scanGallery(this.context);
+      await this.db.upsertAssets(records);
+      const existing: Set<string> = new Set<string>();
+      for (const rec of records) {
+        existing.add(rec.uri);
+      }
+      await this.db.removeMissing(GALLERY_FOLDER_URI, existing);
+    } catch (err) {
+      const message: string = err instanceof Error ? err.message : `${err}`;
+      backupState.lastError = message;
+    }
+  }
+
   private async refreshPendingCountOnly(): Promise<void> {
     try {
-      const folders = ImmichSettings.getBackupFolders();
-      const uris: string[] = [];
-      for (const folder of folders) {
-        uris.push(folder.uri);
-      }
-      const pending: LocalAssetRecord[] = await this.db.getPendingAssets(uris);
+      const pending: LocalAssetRecord[] = await this.db.getPendingAssets(this.collectFolderUris());
       backupState.pendingCount = pending.length;
     } catch (err) {
       // counting is best-effort

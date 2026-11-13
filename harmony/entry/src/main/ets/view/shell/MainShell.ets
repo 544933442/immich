@@ -43,7 +43,7 @@ export struct MainShell {
         $r('app.media.ic_search'), $r('app.media.ic_search_active')))
 
       TabContent() {
-        BackupPage()
+        BackupPage({ pathStack: this.pathStack })
       }
       .tabBar(this.TabItem($r('app.string.tab_backup'), 2,
         $r('app.media.ic_backup'), $r('app.media.ic_backup_active')))

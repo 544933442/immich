@@ -16,3 +16,6 @@
 /.deveco/
 **/oh_modules/
 **/build/
+/signing/
+/.deveco-tmp-*
+/.deveco-verify-shots/

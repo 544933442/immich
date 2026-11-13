@@ -68,6 +68,7 @@ export class ImmichDb {
           VALUES (?, ?, ?, ?, ?, ?, 0)
           ON CONFLICT(uri) DO UPDATE SET
             path=excluded.path,
+            name=excluded.name,
             size=excluded.size,
             mtime_ms=excluded.mtime_ms,
             state=CASE WHEN local_asset.mtime_ms <> excluded.mtime_ms THEN 0 ELSE local_asset.state END`,

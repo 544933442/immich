@@ -161,8 +161,52 @@
       "value": "Backup folders"
     },
     {
+      "name": "backup_gallery",
+      "value": "Back up gallery"
+    },
+    {
+      "name": "backup_gallery_desc",
+      "value": "Back up all photos and videos in the system gallery"
+    },
+    {
+      "name": "backup_gallery_perm_denied",
+      "value": "Gallery access not granted. Enable it in Settings > Privacy > Permission manager."
+    },
+    {
+      "name": "backup_exclude_albums",
+      "value": "Exclude albums"
+    },
+    {
+      "name": "backup_exclude_albums_hint",
+      "value": "Content in the selected albums won't be backed up"
+    },
+    {
+      "name": "backup_exclude_count",
+      "value": "%s albums"
+    },
+    {
+      "name": "backup_exclude_none",
+      "value": "None"
+    },
+    {
+      "name": "backup_albums_empty",
+      "value": "No albums found"
+    },
+    {
+      "name": "perm_media_read_reason",
+      "value": "Required to back up the photos and videos in your gallery to the Immich server"
+    },
+    {
       "name": "backup_add_folder",
       "value": "Add folder"
+    },
+    {
+      "name": "backup_remove_folder",
+      "value": "Remove"
+    },
+    {
+      "name": "backup_remove_folder_confirm",
+      "value": "Remove backup folder \"%s\"? Its uploaded files stay on the server."
     },
     {
       "name": "backup_now",

@@ -30,95 +30,101 @@ export struct SettingsPage {
           .width('100%')
           .padding({ left: 16, top: 16, bottom: 12 })
 
-        Column({ space: 0 }) {
-          Text($r('app.string.settings_user_title'))
-            .fontSize(13)
-            .fontColor($r('app.color.immich_text_secondary'))
-            .width('100%')
-            .padding({ left: 16, top: 12, bottom: 4 })
-          this.InfoRow($r('app.string.settings_name'), authState.userName)
-          Divider().color($r('app.color.immich_outline')).margin({ left: 16 })
-          this.InfoRow($r('app.string.settings_email'), authState.userEmail)
-          Divider().color($r('app.color.immich_outline')).margin({ left: 16 })
-          this.InfoRow($r('app.string.settings_server'), authState.serverUrl)
-        }
-        .width('100%')
-        .backgroundColor($r('app.color.immich_surface'))
-        .borderRadius(14)
-        .margin({ left: 12, right: 12 })
+        Column({ space: 10 }) {
+          Column({ space: 0 }) {
+            Text($r('app.string.settings_user_title'))
+              .fontSize(13)
+              .fontColor($r('app.color.immich_text_secondary'))
+              .width('100%')
+              .padding({ bottom: 4 })
+            this.InfoRow($r('app.string.settings_name'), authState.userName)
+            Divider().color($r('app.color.immich_outline'))
+            this.InfoRow($r('app.string.settings_email'), authState.userEmail)
+            Divider().color($r('app.color.immich_outline'))
+            this.InfoRow($r('app.string.settings_server'), authState.serverUrl)
+          }
+          .width('100%')
+          .padding(16)
+          .backgroundColor($r('app.color.immich_surface'))
+          .borderRadius(14)
 
-        Column({ space: 0 }) {
-          Text($r('app.string.settings_language'))
-            .fontSize(13)
-            .fontColor($r('app.color.immich_text_secondary'))
-            .width('100%')
-            .padding({ left: 16, top: 12, bottom: 4 })
-          Row() {
+          Column({ space: 0 }) {
             Text($r('app.string.settings_language'))
-              .fontSize(15)
+              .fontSize(13)
               .fontColor($r('app.color.immich_text_secondary'))
-            Blank()
-            Text(this.languageDisplayName())
-              .fontSize(15)
-              .fontColor($r('app.color.immich_text_primary'))
-            Image($r('app.media.ic_chevron_right'))
-              .width(18)
-              .height(18)
-              .fillColor($r('app.color.immich_text_secondary'))
-              .padding({ left: 2 })
-          }
-          .width('100%')
-          .padding({ left: 16, right: 16, top: 12, bottom: 12 })
-          .onClick(() => {
-            this.langChooserVisible = true;
-          })
-        }
-        .width('100%')
-        .backgroundColor($r('app.color.immich_surface'))
-        .borderRadius(14)
-        .margin({ left: 12, right: 12, top: 16 })
-
-        Column({ space: 0 }) {
-          Text($r('app.string.settings_cache_title'))
-            .fontSize(13)
-            .fontColor($r('app.color.immich_text_secondary'))
+              .width('100%')
+              .padding({ bottom: 4 })
+            Row() {
+              Text($r('app.string.settings_language'))
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.immich_text_primary'))
+              Blank()
+              Text(this.languageDisplayName())
+                .fontSize(14)
+                .fontColor($r('app.color.immich_text_secondary'))
+              Image($r('app.media.ic_chevron_right'))
+                .width(20)
+                .height(20)
+                .fillColor($r('app.color.immich_text_secondary'))
+                .margin({ left: 4 })
+            }
             .width('100%')
-            .padding({ left: 16, top: 12, bottom: 4 })
-          Row() {
-            Text($r('app.string.settings_cache_size'))
-              .fontSize(15)
-              .fontColor($r('app.color.immich_text_secondary'))
-            Blank()
-            Text(this.cacheSizeText.length > 0 ? this.cacheSizeText : '-')
-              .fontSize(15)
-              .fontColor($r('app.color.immich_text_primary'))
-            Text($r('app.string.settings_cache_clear'))
-              .fontSize(14)
-              .fontColor($r('app.color.immich_error'))
-              .padding({ left: 16 })
-              .onClick(() => {
-                this.confirmClearCache();
-              })
+            .padding({ top: 12, bottom: 12 })
+            .onClick(() => {
+              this.langChooserVisible = true;
+            })
           }
           .width('100%')
-          .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+          .padding(16)
+          .backgroundColor($r('app.color.immich_surface'))
+          .borderRadius(14)
+
+          Column({ space: 0 }) {
+            Text($r('app.string.settings_cache_title'))
+              .fontSize(13)
+              .fontColor($r('app.color.immich_text_secondary'))
+              .width('100%')
+              .padding({ bottom: 4 })
+            Row() {
+              Text($r('app.string.settings_cache_size'))
+                .fontSize(16)
+                .fontWeight(FontWeight.Medium)
+                .fontColor($r('app.color.immich_text_primary'))
+              Blank()
+              Text(this.cacheSizeText.length > 0 ? this.cacheSizeText : '-')
+                .fontSize(14)
+                .fontColor($r('app.color.immich_text_secondary'))
+              Text($r('app.string.settings_cache_clear'))
+                .fontSize(14)
+                .fontColor($r('app.color.immich_error'))
+                .padding({ left: 16 })
+                .onClick(() => {
+                  this.confirmClearCache();
+                })
+            }
+            .width('100%')
+            .padding({ top: 12, bottom: 12 })
+          }
+          .width('100%')
+          .padding(16)
+          .backgroundColor($r('app.color.immich_surface'))
+          .borderRadius(14)
+
+          Button($r('app.string.settings_logout'))
+            .buttonStyle(ButtonStyleMode.EMPHASIZED)
+            .backgroundColor($r('app.color.immich_error'))
+            .fontColor(Color.White)
+            .width('100%')
+            .height(46)
+            .margin({ top: 14 })
+            .enabled(!this.busy)
+            .onClick(() => {
+              this.confirmLogout();
+            })
         }
         .width('100%')
-        .backgroundColor($r('app.color.immich_surface'))
-        .borderRadius(14)
-        .margin({ left: 12, right: 12, top: 16 })
-
-        Button($r('app.string.settings_logout'))
-          .buttonStyle(ButtonStyleMode.EMPHASIZED)
-          .backgroundColor($r('app.color.immich_error'))
-          .fontColor(Color.White)
-          .width('100%')
-          .height(46)
-          .margin({ left: 12, right: 12, top: 24 })
-          .enabled(!this.busy)
-          .onClick(() => {
-            this.confirmLogout();
-          })
+        .padding({ left: 12, right: 12 })
       }
       .width('100%')
       .height('100%')
@@ -190,18 +196,19 @@ export struct SettingsPage {
   InfoRow(label: Resource, value: string) {
     Row() {
       Text(label)
-        .fontSize(15)
-        .fontColor($r('app.color.immich_text_secondary'))
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .fontColor($r('app.color.immich_text_primary'))
       Blank()
       Text(value.length > 0 ? value : '-')
-        .fontSize(15)
-        .fontColor($r('app.color.immich_text_primary'))
+        .fontSize(14)
+        .fontColor($r('app.color.immich_text_secondary'))
         .maxLines(1)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .constraintSize({ maxWidth: '60%' })
     }
     .width('100%')
-    .padding({ left: 16, right: 16, top: 12, bottom: 12 })
+    .padding({ top: 12, bottom: 12 })
   }
 
   private confirmLogout(): void {

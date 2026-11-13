@@ -1,4 +1,5 @@
 import { http } from '@kit.NetworkKit';
+import { hilog } from '@kit.PerformanceAnalysisKit';
 import { BusinessError } from '@kit.BasicServicesKit';
 import { ImmichApiConfig } from './ImmichApiConfig';
 import { ImmichApiError } from './model/ApiModels';
@@ -81,7 +82,12 @@ export class ImmichHttpClient {
       });
       const options: http.HttpRequestOptions = {
         method: http.RequestMethod.POST,
-        header: ImmichApiConfig.authHeaders({ 'Accept': 'application/json' }),
+        // netstack only honours multiFormDataList when the request declares a
+        // multipart content-type; without it the body is silently dropped.
+        header: ImmichApiConfig.authHeaders({
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data'
+        }),
         expectDataType: http.HttpDataType.STRING,
         multiFormDataList: formDataList,
         connectTimeout: 15000,
@@ -90,6 +96,9 @@ export class ImmichHttpClient {
       const response: http.HttpResponse = await httpRequest.request(url, options);
       if (response.responseCode >= 400) {
         const text: string = response.result as string;
+        hilog.error(0x0001, 'ImmichHttp',
+          'upload HTTP %{public}d body: %{public}s', response.responseCode,
+          text.slice(0, 1000));
         throw new ImmichApiError(`HTTP ${response.responseCode}: ${text.slice(0, 200)}`, response.responseCode);
       }
       return response.result as string;
