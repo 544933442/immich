@@ -77,12 +77,14 @@ describe('reasoning-model output truncation', () => {
     });
   });
 
-  it('rejects a lucky short answer when hidden reasoning still consumed the budget', async () => {
+  it('rejects any reasoning model even when it happened to return a full JSON', async () => {
     vi.stubGlobal(
       'fetch',
       respond({
         choices: [{ finish_reason: 'stop', message: { content: '{"results":[]}' } }],
-        usage: { completion_tokens: 800, completion_tokens_details: { reasoning_tokens: 790 } },
+        // Only 15% of the budget went to reasoning: a trivial probe can pass while
+        // real duplicate groups still truncate. Presence of the field is the signal.
+        usage: { completion_tokens: 800, completion_tokens_details: { reasoning_tokens: 120 } },
       }),
     );
 

@@ -354,16 +354,17 @@ export class OpenAiCompatibleProvider implements AiDedupProvider {
             response.status,
           );
         }
-        // A reasoning model can occasionally squeeze out a short JSON before hitting the
-        // limit, so a single lucky probe is not proof the model is usable. When hidden
-        // chain-of-thought consumed essentially the whole output budget, reject it:
-        // real duplicate groups (more images, longer reasons) will reliably truncate.
-        const completionTokens = Number(body.usage?.completion_tokens ?? 0);
+        // A reasoning model can occasionally squeeze out a short JSON on a trivial
+        // synthetic probe, so a single lucky probe is not proof the model is usable.
+        // Non-reasoning vision models (qwen-vl, glm-4v, gpt-4o) never report
+        // `reasoning_tokens`; any positive value means chain-of-thought competes
+        // with the JSON budget and real duplicate groups (more images, longer
+        // reasons) will truncate. Reject the model rather than mislead the admin.
         const reasoningTokens = Number(body.usage?.completion_tokens_details?.reasoning_tokens ?? 0);
-        if (completionTokens > 0 && reasoningTokens / completionTokens > 0.9) {
+        if (reasoningTokens > 0) {
           throw new AiDedupProviderError(
             AiDedupErrorCode.OutputTruncated,
-            'Reasoning tokens consumed the output budget',
+            'Reasoning model output budget is not controllable',
             response.status,
           );
         }
