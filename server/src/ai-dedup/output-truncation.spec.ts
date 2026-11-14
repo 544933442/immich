@@ -76,6 +76,20 @@ describe('reasoning-model output truncation', () => {
       outputTokens: 60,
     });
   });
+
+  it('rejects a lucky short answer when hidden reasoning still consumed the budget', async () => {
+    vi.stubGlobal(
+      'fetch',
+      respond({
+        choices: [{ finish_reason: 'stop', message: { content: '{"results":[]}' } }],
+        usage: { completion_tokens: 800, completion_tokens_details: { reasoning_tokens: 790 } },
+      }),
+    );
+
+    await expect(new OpenAiCompatibleProvider().evaluate(input(), 'key')).rejects.toMatchObject({
+      code: AiDedupErrorCode.OutputTruncated,
+    });
+  });
 });
 
 describe('testConnection real capability probe', () => {
@@ -122,10 +136,14 @@ describe('testConnection real capability probe', () => {
     const json = JSON.stringify({
       version: 'ai-dedup-prompt-v1.0',
       strategyApplied: false,
-      results: [
-        { index: 1, scores: { clarity: 8, quality: 8, composition: 8 }, weightedScore: 8, confidence: 0.9, reason: 'a', defects: [] },
-        { index: 2, scores: { clarity: 7, quality: 7, composition: 7 }, weightedScore: 7, confidence: 0.9, reason: 'b', defects: [] },
-      ],
+      results: Array.from({ length: 6 }, (_, index) => ({
+        index: index + 1,
+        scores: { clarity: 8, quality: 8, composition: 8 },
+        weightedScore: 8,
+        confidence: 0.9,
+        reason: 'ok',
+        defects: [],
+      })),
       recommendedKeepIndices: [1],
       summary: 'ok',
     });

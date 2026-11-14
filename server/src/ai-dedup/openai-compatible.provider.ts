@@ -221,7 +221,11 @@ interface ChatCompletionResponse {
     finish_reason?: string;
     message?: { content?: unknown; reasoning_content?: unknown };
   }>;
-  usage?: { prompt_tokens?: number; completion_tokens?: number };
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    completion_tokens_details?: { reasoning_tokens?: number };
+  };
 }
 
 /** The only phase-1 provider: OpenAI-compatible `chat/completions` with vision input. */
@@ -246,12 +250,13 @@ export class OpenAiCompatibleProvider implements AiDedupProvider {
 
     // Real capability probe. The previous lightweight 1-image / 64-token probe passed on
     // reasoning models (e.g. DeepSeek) whose actual evaluations then returned empty
-    // content for every group. Mirror the real evaluation shape so a broken model is
-    // caught in settings instead of after a page full of slow, empty calls.
-    const images: AiDedupEvaluateInput['images'] = [
-      { index: 1, base64Jpeg: TEST_IMAGE_BASE64 },
-      { index: 2, base64Jpeg: TEST_IMAGE_BASE64 },
-    ];
+    // content for every group. Mirror the real evaluation shape (full prompt, a
+    // typical group size, configured maxTokens) so a broken model is caught in settings
+    // instead of after a page full of slow, empty calls.
+    const images: AiDedupEvaluateInput['images'] = Array.from({ length: 6 }, (_, index) => ({
+      index: index + 1,
+      base64Jpeg: TEST_IMAGE_BASE64,
+    }));
     const input: AiDedupEvaluateInput = {
       ...config,
       temperature: 0,
@@ -342,10 +347,23 @@ export class OpenAiCompatibleProvider implements AiDedupProvider {
         // chain-of-thought and return an empty `content` with finish_reason=length.
         // Detect it here so the whole batch can degrade fast instead of burning
         // the same slow, empty call once per group.
-        if (choice?.finish_reason === 'length' || typeof content !== 'string' || content.trim() === '') {
+        if (choice?.finish_reason === 'length' || choice?.finish_reason === 'max_tokens' || typeof content !== 'string' || content.trim() === '') {
           throw new AiDedupProviderError(
             AiDedupErrorCode.OutputTruncated,
             'Provider returned an empty or truncated completion',
+            response.status,
+          );
+        }
+        // A reasoning model can occasionally squeeze out a short JSON before hitting the
+        // limit, so a single lucky probe is not proof the model is usable. When hidden
+        // chain-of-thought consumed essentially the whole output budget, reject it:
+        // real duplicate groups (more images, longer reasons) will reliably truncate.
+        const completionTokens = Number(body.usage?.completion_tokens ?? 0);
+        const reasoningTokens = Number(body.usage?.completion_tokens_details?.reasoning_tokens ?? 0);
+        if (completionTokens > 0 && reasoningTokens / completionTokens > 0.9) {
+          throw new AiDedupProviderError(
+            AiDedupErrorCode.OutputTruncated,
+            'Reasoning tokens consumed the output budget',
             response.status,
           );
         }
