@@ -3,9 +3,11 @@ import {
   AudioCodec,
   CQMode,
   Colorspace,
+  FallbackStrategy,
   ImageFormat,
   LogLevel,
   OAuthTokenEndpointAuthMethod,
+  Provider,
   ReleaseChannel,
   ToneMapping,
   TranscodeHWAccel,
@@ -13,6 +15,8 @@ import {
   VideoCodec,
   VideoContainer,
 } from '@immich/sdk';
+
+// [ai-dedup]
 
 const serverConfig = (overrides: Partial<ResponseOf<'getServerConfig'>> = {}): ResponseOf<'getServerConfig'> => ({
   loginPageMessage: '',
@@ -148,6 +152,35 @@ const versionHistory = (): ResponseOf<'getVersionHistory'> => [
 
 const adminConfig = (overrides: Partial<ResponseOf<'getAdminConfig'>> = {}): ResponseOf<'getAdminConfig'> => ({
   backup: { database: { enabled: true, cronExpression: '0 02 * * *', keepLastAmount: 14 } },
+  aiDedup: {
+    // [ai-dedup]
+    enabled: false, // [ai-dedup]
+    provider: Provider.OpenaiCompatible, // [ai-dedup]
+    baseURL: '', // [ai-dedup]
+    model: '', // [ai-dedup]
+    timeoutMs: 30_000, // [ai-dedup]
+    maxConcurrency: 2, // [ai-dedup]
+    maxGroupsPerRequest: 20, // [ai-dedup]
+    maxImagesPerGroup: 8, // [ai-dedup]
+    maxImageDimension: 1024, // [ai-dedup]
+    imageQuality: 80, // [ai-dedup]
+    maxTokens: 800, // [ai-dedup]
+    temperature: 0, // [ai-dedup]
+    keepCount: 1, // [ai-dedup]
+    fallbackStrategy: FallbackStrategy.Heuristic, // [ai-dedup]
+    prompt: '', // [ai-dedup]
+    promptVersion: 'ai-dedup-prompt-v1.0', // [ai-dedup]
+    strategyHint: '', // [ai-dedup]
+    allowedHosts: [], // [ai-dedup]
+    dailyCallLimitPerUser: 200, // [ai-dedup]
+    monthlyBudgetAlert: null, // [ai-dedup]
+    costPer1kInputTokens: 0, // [ai-dedup]
+    costPer1kOutputTokens: 0, // [ai-dedup]
+    autoDisableOnLimit: true, // [ai-dedup]
+    lowConfidenceThreshold: 0.5, // [ai-dedup]
+    cacheTtlDays: 30, // [ai-dedup]
+    privacyAcknowledged: false, // [ai-dedup]
+  }, // [ai-dedup]
   ffmpeg: {
     crf: 23,
     threads: 0,

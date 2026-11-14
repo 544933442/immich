@@ -99,6 +99,8 @@ import {
 import { WorkflowLogTable } from 'src/schema/tables/workflow-log.table.js';
 import { WorkflowStepTable } from 'src/schema/tables/workflow-step.table.js';
 import { WorkflowTable } from 'src/schema/tables/workflow.table.js';
+import { AiDedupScoreTable } from 'src/schema/tables/ai-dedup-score.table.js'; // [ai-dedup]
+import { AiDedupUsageTable } from 'src/schema/tables/ai-dedup-usage.table.js'; // [ai-dedup]
 
 @Extensions(['uuid-ossp', 'unaccent', 'cube', 'earthdistance', 'pg_trgm', 'plpgsql'])
 @Database({ name: 'immich' })
@@ -171,6 +173,8 @@ export class ImmichDatabase {
     PluginMethodTable,
     WorkflowTable,
     WorkflowStepTable,
+    AiDedupScoreTable, // [ai-dedup]
+    AiDedupUsageTable, // [ai-dedup]
   ];
 
   functions = [
@@ -313,4 +317,6 @@ export interface DB {
   workflow: WorkflowTable;
   workflow_step: WorkflowStepTable;
   workflow_log: WorkflowLogTable;
+  ai_dedup_score: AiDedupScoreTable; // [ai-dedup]
+  ai_dedup_usage: AiDedupUsageTable; // [ai-dedup]
 }

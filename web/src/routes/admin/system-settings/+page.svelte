@@ -32,6 +32,7 @@
   import type { Component } from 'svelte';
   import { t } from 'svelte-i18n';
   import type { PageData } from './$types';
+  import AiDedupSettings from './AiDedupSettings.svelte'; // [ai-dedup]
   import AuthSettings from './AuthSettings.svelte';
   import BackupSettings from './BackupSettings.svelte';
   import FFmpegSettings from './FFmpegSettings.svelte';
@@ -200,6 +201,14 @@
       key: 'video-transcoding',
       icon: mdiVideoOutline,
     },
+    {
+      // [ai-dedup]
+      component: AiDedupSettings, // [ai-dedup]
+      title: $t('ai_dedup_settings'), // [ai-dedup]
+      subtitle: $t('ai_dedup_settings_description'), // [ai-dedup]
+      key: 'ai-dedup', // [ai-dedup]
+      icon: mdiRobotOutline, // [ai-dedup]
+    }, // [ai-dedup]
   ];
 
   let searchQuery = $state('');

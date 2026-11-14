@@ -556,6 +556,15 @@ export interface SystemMetadata extends Record<SystemMetadataKey, Record<string,
   [SystemMetadataKey.VersionCheckState]: VersionCheckMetadata;
   [SystemMetadataKey.MemoriesState]: MemoriesState;
   [SystemMetadataKey.IntegrityChecksumCheckpoint]: { date?: string };
+  // [ai-dedup] AES-256-GCM credential bundle; plaintext never stored here.
+  [SystemMetadataKey.AiDedupCredential]: { // [ai-dedup]
+    v: number; // [ai-dedup]
+    iv: string; // [ai-dedup]
+    tag: string; // [ai-dedup]
+    cipher: string; // [ai-dedup]
+    masked: string; // [ai-dedup]
+    updatedAt: string; // [ai-dedup]
+  }; // [ai-dedup]
 }
 
 export type UserPreferences = {

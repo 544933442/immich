@@ -392,6 +392,7 @@ export enum SystemMetadataKey {
   VersionCheckState = 'version-check-state',
   License = 'license',
   IntegrityChecksumCheckpoint = 'integrity-checksum-checkpoint',
+  AiDedupCredential = 'ai-dedup-credential', // [ai-dedup]
 }
 
 export enum UserMetadataKey {
@@ -1303,6 +1304,7 @@ export enum ApiTag {
   Users = 'Users',
   Views = 'Views',
   Workflows = 'Workflows',
+  AiDedup = 'AI dedup', // [ai-dedup]
 }
 
 export const WorkflowTriggerSchema = z

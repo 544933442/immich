@@ -8,6 +8,17 @@
   import { getUserConfigQuery } from '#lib/queries/config-user.query.ts';
   import { Route } from '#lib/route.ts';
   import { locale } from '#lib/stores/preferences.store.ts';
+  // [ai-dedup]
+  // [ai-dedup]
+  // [ai-dedup]
+  import {
+    buildAiDedupViewContext,
+    mergeAiKeepIds,
+    provideAiDedupViewContext,
+    type AiDedupGroupResultDto,
+    type AiDedupGroupResultMap,
+  } from '#lib/utils/ai-dedup.ts';
+  // [ai-dedup]
   import { handleError } from '#lib/utils/handle-error.ts';
   import { createStack, deleteDuplicates, resolveDuplicates, updateAssets, type AssetResponseDto } from '@immich/sdk';
   import { Button, HStack, IconButton, Text, modalManager, toastManager } from '@immich/ui';
@@ -24,8 +35,11 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
   import type { PageData } from './$types';
+  import AiRecommendationBar from './AiRecommendationBar.svelte'; // [ai-dedup]
   import DuplicatesCompareControl from './DuplicatesCompareControl.svelte';
   import LinkToDocs from './LinkToDocs.svelte';
+
+  // [ai-dedup]
 
   const query = createPreloadedQuery(getUserConfigQuery);
   const config = $derived(query.data);
@@ -208,6 +222,133 @@
 
   const navigateToIndex = async (index: number) =>
     goto(Route.duplicatesUtility({ index: correctDuplicatesIndex(index) }));
+
+  // [ai-dedup] Publish the AI view via context (Svelte 5 forbids a second $props() call).
+  let aiResults = $state<AiDedupGroupResultMap>(data.aiResults ?? {}); // [ai-dedup]
+  const aiView = $state(buildAiDedupViewContext(aiResults, !!data.aiEnabled)); // [ai-dedup]
+  provideAiDedupViewContext(aiView); // [ai-dedup]
+
+  // [ai-dedup] Apply a re-evaluated group to the in-memory duplicates copy.
+  const applyReevaluatedGroup = (result: AiDedupGroupResultDto) => {
+    // [ai-dedup] Discard stale responses: the user may have navigated to another group
+    // (or resolved this one) while the force-evaluation was in flight.
+    if (duplicates.every((group) => group.duplicateId !== result.duplicateId)) {
+      // [ai-dedup]
+      return;
+    }
+    const response = { degradedCount: 0, quota: { limit: 0, used: 0 }, results: [result], truncatedCount: 0 }; // [ai-dedup]
+    duplicates.splice(0, duplicates.length, ...mergeAiKeepIds(duplicates, response)); // [ai-dedup]
+    aiResults[result.duplicateId] = result; // [ai-dedup]
+    Object.assign(aiView.byAssetId, buildAiDedupViewContext({ [result.duplicateId]: result }, true).byAssetId); // [ai-dedup]
+  };
+
+  // [ai-dedup] Append a "go to trash" toast after an AI-assisted bulk cleanup.
+  let aiPreviousCount = data.duplicates.length; // [ai-dedup]
+  $effect(() => {
+    // [ai-dedup]
+    const current = duplicates.length; // [ai-dedup]
+    if (data.aiEnabled && aiPreviousCount > 0 && current === 0) {
+      // [ai-dedup]
+      toastManager.primary($t('ai_dedup_cleanup_toast')); // [ai-dedup]
+    } // [ai-dedup]
+    aiPreviousCount = current; // [ai-dedup]
+  }); // [ai-dedup]
+
+  // [ai-dedup] Dedicated bulk-cleanup handler for AI mode. The official
+  // handleDeduplicateAll above stays byte-for-byte untouched (A1 / D1): this
+  // handler only swaps the confirmation copy and adds the R-11 acknowledgement,
+  // while still deleting exclusively through the existing resolveDuplicates.
+  const handleAiDeduplicateAll = async () => {
+    // [ai-dedup] Q12 hard gate at the deletion layer (defense in depth on top of
+    // mergeAiKeepIds): groups the AI evaluated successfully but flagged for manual
+    // review are SKIPPED by bulk cleanup, and a group with no keep candidate is
+    // never sent to resolve — at least one asset must survive every group.
+    const groupsToResolve = duplicates.filter((group) => {
+      // [ai-dedup]
+      const result = aiResults[group.duplicateId];
+      if (result && !result.degraded && result.needsManualReview) {
+        // [ai-dedup]
+        return false;
+      }
+      return group.suggestedKeepAssetIds.length > 0;
+    });
+    const skippedCount = duplicates.length - groupsToResolve.length;
+
+    if (groupsToResolve.length === 0) {
+      // [ai-dedup] Nothing can be cleaned up automatically; keep the page untouched.
+      toastManager.primary($t('ai_dedup_bulk_all_skipped'));
+      return;
+    }
+
+    const idsToDelete = groupsToResolve.flatMap((group) => {
+      // [ai-dedup]
+      const keepIds = new Set(group.suggestedKeepAssetIds); // [ai-dedup]
+      return group.assets.map((asset) => asset.id).filter((id) => !keepIds.has(id)); // [ai-dedup]
+    }); // [ai-dedup]
+
+    // [ai-dedup] E2 echoes the effective trash flag; the local config is a fallback.
+    const trashEnabled = data.aiPrompt?.trashEnabled ?? config.trash.enabled; // [ai-dedup]
+    const prompt = trashEnabled // [ai-dedup]
+      ? $t('ai_dedup_bulk_trash_confirmation', { values: { count: idsToDelete.length } }) // [ai-dedup]
+      : $t('ai_dedup_bulk_delete_confirmation', { values: { count: idsToDelete.length } }); // [ai-dedup]
+    const confirmText = trashEnabled ? $t('confirm') : $t('permanently_delete'); // [ai-dedup]
+
+    return withConfirmation(
+      // [ai-dedup]
+      async () => {
+        // [ai-dedup] R-11: with the trash disabled, resolve() deletes permanently.
+        if (!trashEnabled) {
+          // [ai-dedup]
+          const acknowledged = await modalManager.showDialog({
+            // [ai-dedup]
+            prompt: $t('ai_dedup_bulk_delete_extra_check'), // [ai-dedup]
+            confirmText: $t('permanently_delete'), // [ai-dedup]
+            confirmColor: 'danger', // [ai-dedup]
+          }); // [ai-dedup]
+          if (!acknowledged) {
+            // [ai-dedup]
+            return; // [ai-dedup]
+          } // [ai-dedup]
+        } // [ai-dedup]
+
+        const response = await resolveDuplicates({
+          // [ai-dedup]
+          duplicateResolveDto: {
+            // [ai-dedup]
+            groups: groupsToResolve.map((group) => {
+              // [ai-dedup]
+              const keepIds = new Set(group.suggestedKeepAssetIds); // [ai-dedup]
+              return {
+                // [ai-dedup]
+                duplicateId: group.duplicateId, // [ai-dedup]
+                keepAssetIds: group.suggestedKeepAssetIds, // [ai-dedup]
+                trashAssetIds: group.assets.map((asset) => asset.id).filter((id) => !keepIds.has(id)), // [ai-dedup]
+              }; // [ai-dedup]
+            }), // [ai-dedup]
+          }, // [ai-dedup]
+        }); // [ai-dedup]
+
+        const failedCount = response.filter(({ success }) => !success).length; // [ai-dedup]
+        if (failedCount > 0) {
+          // [ai-dedup]
+          toastManager.danger($t('errors.unable_to_resolve_duplicate')); // [ai-dedup]
+        } // [ai-dedup]
+
+        // [ai-dedup] Keep the skipped groups on the page instead of clearing everything.
+        const resolvedIds = new Set(groupsToResolve.map((group) => group.duplicateId)); // [ai-dedup]
+        duplicates = duplicates.filter((group) => !resolvedIds.has(group.duplicateId)); // [ai-dedup]
+
+        deletedNotification(idsToDelete.length); // [ai-dedup]
+        if (skippedCount > 0) {
+          // [ai-dedup] The user must know which groups were deliberately not cleaned up.
+          toastManager.primary($t('ai_dedup_bulk_skipped_groups', { values: { count: skippedCount } })); // [ai-dedup]
+        }
+        await goto(Route.duplicatesUtility()); // [ai-dedup]
+      }, // [ai-dedup]
+      prompt, // [ai-dedup]
+      confirmText, // [ai-dedup]
+    ); // [ai-dedup]
+  }; // [ai-dedup]
 </script>
 
 <svelte:document
@@ -222,6 +363,7 @@
 <UserPageLayout title={data.meta.title + ` (${duplicates.length.toLocaleString($locale)})`} scrollbar={true}>
   {#snippet buttons()}
     <HStack gap={0}>
+      <!-- [ai-dedup] Disabled mode keeps the official button verbatim; enabled mode hides it. -->
       <Button
         leadingIcon={mdiTrashCanOutline}
         onclick={() => handleDeduplicateAll()}
@@ -229,9 +371,23 @@
         size="small"
         variant="ghost"
         color="secondary"
+        class={data.aiEnabled ? 'hidden' : ''}
       >
         <Text class="hidden md:block">{$t('deduplicate_all')}</Text>
       </Button>
+      {#if data.aiEnabled}
+        <!-- [ai-dedup] AI confirmation copy + R-11 acknowledgement live in the dedicated handler. -->
+        <Button
+          leadingIcon={mdiTrashCanOutline}
+          onclick={() => handleAiDeduplicateAll()}
+          disabled={!hasDuplicates}
+          size="small"
+          variant="ghost"
+          color="secondary"
+        >
+          <Text class="hidden md:block">{$t('deduplicate_all')}</Text>
+        </Button>
+      {/if}
       <Button
         leadingIcon={mdiCheckOutline}
         onclick={() => handleKeepAll()}
@@ -261,7 +417,21 @@
         <LinkToDocs href="https://docs.immich.app/features/duplicates-utility" />
       </Text>
 
-      {#key duplicates[duplicatesIndex].duplicateId}
+      <!-- [ai-dedup] Key includes generatedAt so a force re-evaluation rebuilds the compare
+           control: otherwise its internal selectedAssetIds would keep the stale pre-selection
+           while the badges already show the fresh AI recommendation. -->
+      {#key `${duplicates[duplicatesIndex].duplicateId}:${aiResults[duplicates[duplicatesIndex].duplicateId]?.generatedAt ?? ''}`}
+        {#if data.aiEnabled}
+          <!-- [ai-dedup] -->
+          <AiRecommendationBar
+            aiEnabled={data.aiEnabled}
+            aiPrompt={data.aiPrompt ?? null}
+            aiResult={aiResults[duplicates[duplicatesIndex].duplicateId]}
+            onReevaluate={applyReevaluatedGroup}
+          />
+          <!-- [ai-dedup] -->
+        {/if}
+        <!-- [ai-dedup] -->
         <DuplicatesCompareControl
           assets={duplicates[duplicatesIndex].assets}
           suggestedKeepAssetIds={duplicates[duplicatesIndex].suggestedKeepAssetIds}
@@ -269,6 +439,7 @@
           onResolve={(duplicateAssetIds, trashIds) =>
             handleResolve(duplicates[duplicatesIndex].duplicateId, duplicateAssetIds, trashIds)}
           onStack={(assets) => handleStack(duplicates[duplicatesIndex].duplicateId, assets)}
+          aiResult={aiResults[duplicates[duplicatesIndex].duplicateId]}
         />
         <div class="mx-auto mb-16 max-w-5xl">
           <div class="mb-4 flex w-full place-content-center place-items-center items-center justify-between sm:px-6">

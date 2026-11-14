@@ -54,6 +54,60 @@ export type ActivityStatisticsResponseDto = {
     /** Number of likes */
     likes: number;
 };
+export type AdminConfigAiDedupDto = {
+    /** SSRF allowlist of hostnames */
+    allowedHosts: string[];
+    /** Auto-disable AI on quota exceeded */
+    autoDisableOnLimit: boolean;
+    /** OpenAI-compatible base URL */
+    baseURL: string;
+    /** Score cache TTL in days */
+    cacheTtlDays: number;
+    /** Cost per 1K input tokens */
+    costPer1kInputTokens: number;
+    /** Cost per 1K output tokens */
+    costPer1kOutputTokens: number;
+    /** Per-user daily call limit */
+    dailyCallLimitPerUser: number;
+    /** Enable AI-assisted duplicate keep recommendation */
+    enabled: boolean;
+    /** Degradation strategy */
+    fallbackStrategy: FallbackStrategy;
+    /** JPEG quality */
+    imageQuality: number;
+    /** Recommended keep count per group */
+    keepCount: number;
+    /** Low confidence threshold */
+    lowConfidenceThreshold: number;
+    /** Max concurrent group evaluations */
+    maxConcurrency: number;
+    /** Max groups per evaluate request */
+    maxGroupsPerRequest: number;
+    /** Max image long edge in px */
+    maxImageDimension: number;
+    /** Max images sent per group */
+    maxImagesPerGroup: number;
+    /** Max response tokens */
+    maxTokens: number;
+    /** Vision model name */
+    model: string;
+    /** Monthly budget alert (USD) */
+    monthlyBudgetAlert: number | null;
+    /** Privacy notice acknowledged */
+    privacyAcknowledged: boolean;
+    /** Fixed prompt template (read-only, from server constant) */
+    prompt: string;
+    /** Prompt version */
+    promptVersion: string;
+    /** Vision model protocol */
+    provider: Provider;
+    /** Editable strategy hint appended to the fixed template */
+    strategyHint: string;
+    /** Fixed to 0 for reproducibility */
+    temperature: number;
+    /** Per-request timeout in ms */
+    timeoutMs: number;
+};
 export type AdminConfigDatabaseBackupDto = {
     /** Cron expression */
     cronExpression: string;
@@ -417,6 +471,7 @@ export type AdminConfigUserDto = {
     deleteDelay: number;
 };
 export type AdminConfigDto = {
+    aiDedup: AdminConfigAiDedupDto;
     backup: AdminConfigBackupsDto;
     ffmpeg: AdminConfigFFmpegDto;
     image: AdminConfigImageDto;
@@ -862,6 +917,130 @@ export type AssetStatsResponseDto = {
     total: number;
     /** Number of videos */
     videos: number;
+};
+export type AiDedupClearResultDto = {
+    cleared: boolean;
+};
+export type AiDedupCredentialStatusDto = {
+    configured: boolean;
+    /** Masked apiKey, never the plaintext */
+    masked: string;
+    updatedAt: string;
+};
+export type AiDedupCredentialDto = {
+    apiKey: string;
+};
+export type AiDedupEvaluateDto = {
+    /** Duplicate group ids to evaluate */
+    duplicateIds: string[];
+    /** Bypass the score cache for these groups */
+    force?: boolean;
+};
+export type AiDedupQuotaDto = {
+    limit: number;
+    used: number;
+};
+export type AiDedupScoresDto = {
+    clarity: number;
+    composition: number;
+    quality: number;
+};
+export type AiDedupAssetScoreDto = {
+    /** Asset id */
+    assetId: string;
+    confidence: number;
+    decision: Decision;
+    defects: string[];
+    deleteReason: string;
+    /** 1-based shuffled index sent to the model */
+    index: number;
+    reason: string;
+    recommendedKeep: boolean;
+    scoreGapToBest: number;
+    scores: AiDedupScoresDto;
+    source: Source;
+    weightedScore: number;
+};
+export type AiDedupGroupResultDto = {
+    degradeReason: string | null;
+    degraded: boolean;
+    /** Duplicate group id (existing asset.duplicateId semantics) */
+    duplicateId: string;
+    /** ISO 8601 UTC */
+    generatedAt: string;
+    /** Shuffled 1..N index -> assetId; never sent to the model */
+    indexMap: {
+        [key: string]: string;
+    };
+    model: string;
+    needsManualReview: boolean;
+    promptVersion: string;
+    /** AI recommended keep set; empty when degraded */
+    recommendedKeepAssetIds: string[];
+    results: AiDedupAssetScoreDto[];
+    strategyApplied: boolean;
+    summary: string;
+    truncated: boolean;
+};
+export type AiDedupEvaluateResponseDto = {
+    degradedCount: number;
+    quota: AiDedupQuotaDto;
+    results: AiDedupGroupResultDto[];
+    truncatedCount: number;
+};
+export type AiDedupPromptDefaultsDto = {
+    cacheTtlDays: number;
+    fallbackStrategy: string;
+    keepCount: number;
+    lowConfidenceThreshold: number;
+    promptVersion: string;
+    strategyHint: string;
+};
+export type AiDedupPromptDto = {
+    defaults: AiDedupPromptDefaultsDto;
+    enabled: boolean;
+    /** Full fixed prompt template (read-only) */
+    promptTemplate: string;
+    strategySummary: string;
+    trashEnabled: boolean;
+    version: string;
+};
+export type AiDedupDeleteScoresDto = {
+    includeUsage?: boolean;
+    ownerId?: string;
+};
+export type AiDedupPurgeResultDto = {
+    credentialCleared: boolean;
+    scoresDeleted: number;
+    usageDeleted: number;
+};
+export type AiDedupTestConnectionDto = {
+    apiKey?: string;
+    baseURL?: string;
+    model?: string;
+};
+export type AiDedupTestResultDto = {
+    latencyMs: number;
+    ok: boolean;
+    reason?: Reason;
+};
+export type AiDedupOwnerUsageDto = {
+    calls: number;
+    estimatedCostUsd: number;
+    inputTokens: number;
+    outputTokens: number;
+    ownerId: string;
+};
+export type AiDedupUsageBucketDto = {
+    calls: number;
+    estimatedCostUsd: number;
+    inputTokens: number;
+    outputTokens: number;
+};
+export type AiDedupUsageDto = {
+    byOwner: AiDedupOwnerUsageDto[];
+    month: AiDedupUsageBucketDto;
+    today: AiDedupUsageBucketDto;
 };
 export type AlbumUserResponseDto = {
     role: AlbumUserRole;
@@ -4450,6 +4629,117 @@ export function getUserStatisticsAdmin({ id, isFavorite, isTrashed, visibility }
         isFavorite,
         isTrashed,
         visibility
+    }))}`, {
+        ...opts
+    }));
+}
+/**
+ * E5: clear the credential and its in-memory cache.
+ */
+export function deleteAiDedupCredential(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AiDedupClearResultDto;
+    }>("/ai-dedup/credential", {
+        ...opts,
+        method: "DELETE"
+    }));
+}
+/**
+ * E3: masked credential status (admin only).
+ */
+export function getAiDedupCredential(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AiDedupCredentialStatusDto;
+    }>("/ai-dedup/credential", {
+        ...opts
+    }));
+}
+/**
+ * E4: AES-256-GCM encrypted credential write into system_metadata.
+ */
+export function putAiDedupCredential({ aiDedupCredentialDto }: {
+    aiDedupCredentialDto: AiDedupCredentialDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AiDedupCredentialStatusDto;
+    }>("/ai-dedup/credential", oazapfts.json({
+        ...opts,
+        method: "PUT",
+        body: aiDedupCredentialDto
+    })));
+}
+/**
+ * E1: on-demand evaluation / cache lookup; per-group degradation, never a whole-request error.
+ */
+export function evaluateAiDedup({ aiDedupEvaluateDto }: {
+    aiDedupEvaluateDto: AiDedupEvaluateDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 201;
+        data: AiDedupEvaluateResponseDto;
+    }>("/ai-dedup/evaluate", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: aiDedupEvaluateDto
+    })));
+}
+/**
+ * E2: prompt/version/privacy state for the duplicates page; contains no credentials.
+ */
+export function getAiDedupPrompt(opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AiDedupPromptDto;
+    }>("/ai-dedup/prompt", {
+        ...opts
+    }));
+}
+/**
+ * E6: one-click data clearing (scores + optional usage).
+ */
+export function deleteAiDedupScores({ aiDedupDeleteScoresDto }: {
+    aiDedupDeleteScoresDto: AiDedupDeleteScoresDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AiDedupPurgeResultDto;
+    }>("/ai-dedup/scores", oazapfts.json({
+        ...opts,
+        method: "DELETE",
+        body: aiDedupDeleteScoresDto
+    })));
+}
+/**
+ * E7: connectivity / vision capability probe; uses a built-in 1x1 image only.
+ */
+export function testAiDedupConnection({ aiDedupTestConnectionDto }: {
+    aiDedupTestConnectionDto: AiDedupTestConnectionDto;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 201;
+        data: AiDedupTestResultDto;
+    }>("/ai-dedup/test-connection", oazapfts.json({
+        ...opts,
+        method: "POST",
+        body: aiDedupTestConnectionDto
+    })));
+}
+/**
+ * E8: usage and estimated cost readout.
+ */
+export function getAiDedupUsage({ month, ownerId }: {
+    month?: string;
+    ownerId?: string;
+}, opts?: Oazapfts.RequestOpts) {
+    return oazapfts.ok(oazapfts.fetchJson<{
+        status: 200;
+        data: AiDedupUsageDto;
+    }>(`/ai-dedup/usage${QS.query(QS.explode({
+        month,
+        ownerId
     }))}`, {
         ...opts
     }));
@@ -8170,6 +8460,13 @@ export enum UserAvatarColor {
     Gray = "gray",
     Amber = "amber"
 }
+export enum FallbackStrategy {
+    Heuristic = "heuristic",
+    Manual = "manual"
+}
+export enum Provider {
+    OpenaiCompatible = "openai-compatible"
+}
 export enum TranscodeHWAccel {
     Nvenc = "nvenc",
     Qsv = "qsv",
@@ -8302,6 +8599,22 @@ export enum AssetVisibility {
     Timeline = "timeline",
     Hidden = "hidden",
     Locked = "locked"
+}
+export enum Decision {
+    Keep = "keep",
+    Trash = "trash"
+}
+export enum Source {
+    Ai = "ai",
+    Heuristic = "heuristic"
+}
+export enum Reason {
+    Auth = "AUTH",
+    Timeout = "TIMEOUT",
+    NoVision = "NO_VISION",
+    Network = "NETWORK",
+    SsrfBlocked = "SSRF_BLOCKED",
+    Unknown = "UNKNOWN"
 }
 export enum AlbumUserRole {
     Editor = "editor",

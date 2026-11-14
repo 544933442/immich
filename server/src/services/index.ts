@@ -53,6 +53,7 @@ import { VersionService } from 'src/services/version.service.js';
 import { ViewService } from 'src/services/view.service.js';
 import { WorkflowExecutionService } from 'src/services/workflow-execution.service.js';
 import { WorkflowService } from 'src/services/workflow.service.js';
+import { AiDedupService } from 'src/ai-dedup/ai-dedup.service.js'; // [ai-dedup]
 
 export const services = [
   ApiKeyService,
@@ -110,4 +111,5 @@ export const services = [
   ViewService,
   WorkflowExecutionService,
   WorkflowService,
+  AiDedupService, // [ai-dedup]
 ];

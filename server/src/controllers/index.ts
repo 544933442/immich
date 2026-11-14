@@ -45,6 +45,7 @@ import { UserController } from 'src/controllers/user.controller.js';
 import { VideoStreamController } from 'src/controllers/video-stream.controller.js';
 import { ViewController } from 'src/controllers/view.controller.js';
 import { WorkflowController } from 'src/controllers/workflow.controller.js';
+import { AiDedupController } from 'src/ai-dedup/ai-dedup.controller.js'; // [ai-dedup]
 
 export const controllers = [
   ApiKeyController,
@@ -94,4 +95,5 @@ export const controllers = [
   VideoStreamController,
   ViewController,
   WorkflowController,
+  AiDedupController, // [ai-dedup]
 ];

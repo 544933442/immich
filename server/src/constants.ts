@@ -212,6 +212,7 @@ export const endpointTags: Record<ApiTag, string> = {
   [ApiTag.Views]: 'Endpoints for specialized views, such as the folder view.',
   [ApiTag.Workflows]:
     'A workflow is a set of actions that run whenever a triggering event occurs. Workflows also can include filters to further limit execution.',
+  [ApiTag.AiDedup]: 'Endpoints for AI-assisted duplicate keep recommendations.', // [ai-dedup]
 };
 
 export const AUDIO_ENCODER: Record<AudioCodec, string> = {

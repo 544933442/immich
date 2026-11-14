@@ -4,6 +4,7 @@
   import { assetViewerManager } from '#lib/managers/asset-viewer-manager.svelte.ts';
   import { authManager } from '#lib/managers/auth-manager.svelte.ts';
   import { handlePromiseError } from '#lib/utils.ts';
+  import { useAiDedupViewContext, type AiDedupGroupResultDto } from '#lib/utils/ai-dedup.ts'; // [ai-dedup]
   import { getNextAsset, getPreviousAsset } from '#lib/utils/asset-utils.ts';
   import {
     computeDifferingMetadataFields,
@@ -17,6 +18,9 @@
   import { onDestroy, onMount } from 'svelte';
   import { t } from 'svelte-i18n';
   import { SvelteSet } from 'svelte/reactivity';
+  // [ai-dedup]
+  import AiScoreBadge from './AiScoreBadge.svelte'; // [ai-dedup]
+  import AiTrashReasonBadge from './AiTrashReasonBadge.svelte'; // [ai-dedup]
   import DuplicateAsset from './DuplicateAsset.svelte';
 
   interface Props {
@@ -25,9 +29,13 @@
     showMore: boolean;
     onResolve: (duplicateAssetIds: string[], trashIds: string[]) => void;
     onStack: (assets: AssetResponseDto[]) => void;
+    aiResult?: AiDedupGroupResultDto; // [ai-dedup]
   }
 
+  // [ai-dedup] `aiResult` is delivered through context: Svelte 5 forbids a second `$props()` call.
+  // eslint-disable-next-line svelte/no-unused-props -- [ai-dedup] prop kept for the additive contract
   let { assets, suggestedKeepAssetIds, onResolve, onStack, showMore = $bindable() }: Props = $props();
+  const aiView = useAiDedupViewContext(); // [ai-dedup]
   // eslint-disable-next-line svelte/no-unnecessary-state-wrap
   let selectedAssetIds = $state(new SvelteSet<string>());
   let trashCount = $derived(assets.length - selectedAssetIds.size);
@@ -187,6 +195,38 @@
     </div>
   </div>
 
+  {#if aiView.enabled}
+    <!-- [ai-dedup] -->
+    <div class="mx-auto mb-4 flex w-fit min-w-full flex-nowrap justify-center gap-1 px-2">
+      <!-- [ai-dedup] -->
+      {#each assets as asset (asset.id)}
+        <!-- [ai-dedup] -->
+        {const aiAssetView = $derived(aiView.byAssetId[asset.id])}
+        <!-- [ai-dedup] -->
+        <div class="relative min-w-60 flex-1">
+          <!-- [ai-dedup] -->
+          <!-- [ai-dedup] Low-confidence groups must not be dressed up as an AI verdict:
+               they keep the heuristic hint (B11/Q12), same as degraded groups. -->
+          {#if aiAssetView && !aiAssetView.degraded && !aiAssetView.needsManualReview}
+            <!-- [ai-dedup] -->
+            <AiScoreBadge score={aiAssetView.score} recommendedKeep={aiAssetView.score.recommendedKeep} />
+            <!-- [ai-dedup] -->
+          {/if}
+          <!-- [ai-dedup] -->
+          {#if aiAssetView}
+            <!-- [ai-dedup] -->
+            <AiTrashReasonBadge view={aiAssetView} />
+            <!-- [ai-dedup] -->
+          {/if}
+          <!-- [ai-dedup] -->
+        </div>
+        <!-- [ai-dedup] -->
+      {/each}
+      <!-- [ai-dedup] -->
+    </div>
+    <!-- [ai-dedup] -->
+  {/if}
+  <!-- [ai-dedup] -->
   {#if hasMore}
     <div class="flex justify-center">
       <Button size="small" variant="ghost" color="secondary" onclick={() => (showMore = !showMore)}>

@@ -258,6 +258,7 @@ const updatedConfig = Object.freeze<SystemConfig>({
       albumUpdateTemplate: '',
     },
   },
+  aiDedup: defaults.aiDedup, // [ai-dedup]
 });
 
 describe(SystemConfigService.name, () => {

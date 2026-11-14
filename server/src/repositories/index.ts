@@ -57,6 +57,7 @@ import { ViewRepository } from 'src/repositories/view-repository.js';
 import { WebAuthnRepository } from 'src/repositories/webauthn.repository.js';
 import { WebsocketRepository } from 'src/repositories/websocket.repository.js';
 import { WorkflowRepository } from 'src/repositories/workflow.repository.js';
+import { AiDedupRepository } from 'src/ai-dedup/ai-dedup.repository.js'; // [ai-dedup]
 
 export const repositories = [
   AccessRepository,
@@ -118,4 +119,5 @@ export const repositories = [
   WebAuthnRepository,
   WebsocketRepository,
   WorkflowRepository,
+  AiDedupRepository, // [ai-dedup]
 ];

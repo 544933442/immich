@@ -32,6 +32,7 @@ import {
   VideoContainerSchema,
 } from 'src/enum.js';
 import type { DeepPartial } from 'src/types.js';
+import { AI_DEDUP_DEFAULT_PROMPT, AI_DEDUP_PROMPT_VERSION } from 'src/ai-dedup/constants.js'; // [ai-dedup]
 
 const { Admin, User, Public } = ConfigVisibility;
 
@@ -445,6 +446,39 @@ const AdminConfigSchemaWithVisibility = z
     user: z
       .object({ deleteDelay: z.int().min(1).describe('Delete delay').meta({ visibility: User }) })
       .meta({ id: 'AdminConfigUserDto' }),
+    // [ai-dedup] AI dedup config domain (Admin-only; no apiKey here). Do not edit existing lines above.
+    aiDedup: z // [ai-dedup]
+      .object({ // [ai-dedup]
+        enabled: configBool.describe('Enable AI-assisted duplicate keep recommendation'), // [ai-dedup]
+        provider: z.enum(['openai-compatible']).describe('Vision model protocol'), // [ai-dedup]
+        baseURL: z.string().describe('OpenAI-compatible base URL'), // [ai-dedup]
+        // [ai-dedup] Length caps mirror the ai_dedup_score column limits (varchar 128/32);
+        // an over-long value would otherwise fail the cache write and silently degrade.
+        model: z.string().max(128).describe('Vision model name'), // [ai-dedup]
+        timeoutMs: z.int().min(1000).max(120_000).describe('Per-request timeout in ms'), // [ai-dedup]
+        maxConcurrency: z.int().min(1).max(8).describe('Max concurrent group evaluations'), // [ai-dedup]
+        maxGroupsPerRequest: z.int().min(1).max(100).describe('Max groups per evaluate request'), // [ai-dedup]
+        maxImagesPerGroup: z.int().min(2).max(64).describe('Max images sent per group'), // [ai-dedup]
+        maxImageDimension: z.int().min(256).max(2048).describe('Max image long edge in px'), // [ai-dedup]
+        imageQuality: z.int().min(1).max(100).describe('JPEG quality'), // [ai-dedup]
+        maxTokens: z.int().min(1).max(8192).describe('Max response tokens'), // [ai-dedup]
+        temperature: z.number().min(0).max(0).meta({ format: 'double' }).describe('Fixed to 0 for reproducibility'), // [ai-dedup]
+        keepCount: z.int().min(1).max(8).describe('Recommended keep count per group'), // [ai-dedup]
+        fallbackStrategy: z.enum(['heuristic', 'manual']).describe('Degradation strategy'), // [ai-dedup]
+        prompt: z.string().describe('Fixed prompt template (read-only, from server constant)'), // [ai-dedup]
+        promptVersion: z.string().max(32).describe('Prompt version'), // [ai-dedup]
+        strategyHint: z.string().describe('Editable strategy hint appended to the fixed template'), // [ai-dedup]
+        allowedHosts: z.array(z.string()).describe('SSRF allowlist of hostnames'), // [ai-dedup]
+        dailyCallLimitPerUser: z.int().min(1).describe('Per-user daily call limit'), // [ai-dedup]
+        monthlyBudgetAlert: z.number().min(0).nullable().meta({ format: 'double' }).describe('Monthly budget alert (USD)'), // [ai-dedup]
+        costPer1kInputTokens: z.number().min(0).meta({ format: 'double' }).describe('Cost per 1K input tokens'), // [ai-dedup]
+        costPer1kOutputTokens: z.number().min(0).meta({ format: 'double' }).describe('Cost per 1K output tokens'), // [ai-dedup]
+        autoDisableOnLimit: configBool.describe('Auto-disable AI on quota exceeded'), // [ai-dedup]
+        lowConfidenceThreshold: z.number().min(0).max(1).meta({ format: 'double' }).describe('Low confidence threshold'), // [ai-dedup]
+        cacheTtlDays: z.int().min(1).max(365).describe('Score cache TTL in days'), // [ai-dedup]
+        privacyAcknowledged: configBool.describe('Privacy notice acknowledged'), // [ai-dedup]
+      }) // [ai-dedup]
+      .meta({ id: 'AdminConfigAiDedupDto' }), // [ai-dedup]
   })
   .describe('Configuration properties that are visible to the admin')
   .meta({ id: 'AdminConfigDto' });
@@ -818,4 +852,33 @@ export const defaults = Object.freeze<SystemConfig>({
   user: {
     deleteDelay: 7,
   },
+  // [ai-dedup] Defaults MUST mirror the schema above (utils/config.ts getKeysDeep(defaults)).
+  aiDedup: { // [ai-dedup]
+    enabled: false, // [ai-dedup]
+    provider: 'openai-compatible', // [ai-dedup]
+    baseURL: process.env.IMMICH_AI_DEDUP_BASE_URL || '', // [ai-dedup]
+    model: '', // [ai-dedup]
+    timeoutMs: 30_000, // [ai-dedup]
+    maxConcurrency: 2, // [ai-dedup]
+    maxGroupsPerRequest: 20, // [ai-dedup]
+    maxImagesPerGroup: 8, // [ai-dedup]
+    maxImageDimension: 1024, // [ai-dedup]
+    imageQuality: 80, // [ai-dedup]
+    maxTokens: 800, // [ai-dedup]
+    temperature: 0, // [ai-dedup]
+    keepCount: 1, // [ai-dedup]
+    fallbackStrategy: 'heuristic', // [ai-dedup]
+    prompt: AI_DEDUP_DEFAULT_PROMPT, // [ai-dedup]
+    promptVersion: AI_DEDUP_PROMPT_VERSION, // [ai-dedup]
+    strategyHint: '', // [ai-dedup]
+    allowedHosts: [], // [ai-dedup]
+    dailyCallLimitPerUser: 200, // [ai-dedup]
+    monthlyBudgetAlert: null, // [ai-dedup]
+    costPer1kInputTokens: 0, // [ai-dedup]
+    costPer1kOutputTokens: 0, // [ai-dedup]
+    autoDisableOnLimit: true, // [ai-dedup]
+    lowConfidenceThreshold: 0.5, // [ai-dedup]
+    cacheTtlDays: 30, // [ai-dedup]
+    privacyAcknowledged: false, // [ai-dedup]
+  }, // [ai-dedup]
 });

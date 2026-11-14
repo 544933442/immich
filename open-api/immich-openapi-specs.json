@@ -2156,6 +2156,430 @@
         "x-immich-state": "Stable"
       }
     },
+    "/ai-dedup/credential": {
+      "delete": {
+        "description": "Delete the stored credential and reset the in-memory plaintext cache.",
+        "operationId": "deleteAiDedupCredential",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupClearResultDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E5: clear the credential and its in-memory cache.",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      },
+      "get": {
+        "description": "Return whether a credential is configured and its masked form; never the plaintext.",
+        "operationId": "getAiDedupCredential",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupCredentialStatusDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E3: masked credential status (admin only).",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      },
+      "put": {
+        "description": "Encrypt and store the model apiKey. The plaintext is never returned or logged.",
+        "operationId": "putAiDedupCredential",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiDedupCredentialDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupCredentialStatusDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E4: AES-256-GCM encrypted credential write into system_metadata.",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      }
+    },
+    "/ai-dedup/evaluate": {
+      "post": {
+        "description": "Return AI quality scores and a recommended keep set per duplicate group. Each group degrades independently to the existing heuristic recommendation.",
+        "operationId": "evaluateAiDedup",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiDedupEvaluateDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupEvaluateResponseDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E1: on-demand evaluation / cache lookup; per-group degradation, never a whole-request error.",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "duplicate.read",
+        "x-immich-state": "Alpha"
+      }
+    },
+    "/ai-dedup/prompt": {
+      "get": {
+        "description": "Return the fixed prompt template, strategy summary, enabled flag and trash.enabled so the confirmation dialog can warn about permanent deletion.",
+        "operationId": "getAiDedupPrompt",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupPromptDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E2: prompt/version/privacy state for the duplicates page; contains no credentials.",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-permission": "duplicate.read",
+        "x-immich-state": "Alpha"
+      }
+    },
+    "/ai-dedup/scores": {
+      "delete": {
+        "description": "Delete cached scores and (optionally) usage counters, scoped by ownerId when provided.",
+        "operationId": "deleteAiDedupScores",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiDedupDeleteScoresDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupPurgeResultDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E6: one-click data clearing (scores + optional usage).",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      }
+    },
+    "/ai-dedup/test-connection": {
+      "post": {
+        "description": "Probe connectivity, authentication and image input support without sending any real user photo.",
+        "operationId": "testAiDedupConnection",
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiDedupTestConnectionDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupTestResultDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E7: connectivity / vision capability probe; uses a built-in 1x1 image only.",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      }
+    },
+    "/ai-dedup/usage": {
+      "get": {
+        "description": "Return today/month usage and estimated cost, optionally filtered by owner and month.",
+        "operationId": "getAiDedupUsage",
+        "parameters": [
+          {
+            "name": "month",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "pattern": "^\\d{4}-\\d{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "ownerId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiDedupUsageDto"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          },
+          {
+            "cookie": []
+          },
+          {
+            "api_key": []
+          }
+        ],
+        "summary": "E8: usage and estimated cost readout.",
+        "tags": [
+          "AI dedup"
+        ],
+        "x-immich-admin-only": true,
+        "x-immich-history": [
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Added"
+          },
+          {
+            "version": "v3.4.0-ai-dedup",
+            "state": "Alpha"
+          }
+        ],
+        "x-immich-state": "Alpha"
+      }
+    },
     "/albums": {
       "get": {
         "description": "Retrieve a list of albums available to the authenticated user.",
@@ -18773,6 +19197,10 @@
     {
       "name": "Workflows",
       "description": "A workflow is a set of actions that run whenever a triggering event occurs. Workflows also can include filters to further limit execution."
+    },
+    {
+      "name": "AI dedup",
+      "description": "Endpoints for AI-assisted duplicate keep recommendations."
     }
   ],
   "servers": [
@@ -18909,6 +19337,186 @@
         ],
         "type": "object"
       },
+      "AdminConfigAiDedupDto": {
+        "properties": {
+          "allowedHosts": {
+            "description": "SSRF allowlist of hostnames",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "autoDisableOnLimit": {
+            "description": "Auto-disable AI on quota exceeded",
+            "type": "boolean"
+          },
+          "baseURL": {
+            "description": "OpenAI-compatible base URL",
+            "type": "string"
+          },
+          "cacheTtlDays": {
+            "description": "Score cache TTL in days",
+            "maximum": 365,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "costPer1kInputTokens": {
+            "description": "Cost per 1K input tokens",
+            "format": "double",
+            "minimum": 0,
+            "type": "number"
+          },
+          "costPer1kOutputTokens": {
+            "description": "Cost per 1K output tokens",
+            "format": "double",
+            "minimum": 0,
+            "type": "number"
+          },
+          "dailyCallLimitPerUser": {
+            "description": "Per-user daily call limit",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "enabled": {
+            "description": "Enable AI-assisted duplicate keep recommendation",
+            "type": "boolean"
+          },
+          "fallbackStrategy": {
+            "description": "Degradation strategy",
+            "enum": [
+              "heuristic",
+              "manual"
+            ],
+            "type": "string"
+          },
+          "imageQuality": {
+            "description": "JPEG quality",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "keepCount": {
+            "description": "Recommended keep count per group",
+            "maximum": 8,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "lowConfidenceThreshold": {
+            "description": "Low confidence threshold",
+            "format": "double",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "maxConcurrency": {
+            "description": "Max concurrent group evaluations",
+            "maximum": 8,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxGroupsPerRequest": {
+            "description": "Max groups per evaluate request",
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "maxImageDimension": {
+            "description": "Max image long edge in px",
+            "maximum": 2048,
+            "minimum": 256,
+            "type": "integer"
+          },
+          "maxImagesPerGroup": {
+            "description": "Max images sent per group",
+            "maximum": 64,
+            "minimum": 2,
+            "type": "integer"
+          },
+          "maxTokens": {
+            "description": "Max response tokens",
+            "maximum": 8192,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "model": {
+            "description": "Vision model name",
+            "type": "string"
+          },
+          "monthlyBudgetAlert": {
+            "description": "Monthly budget alert (USD)",
+            "format": "double",
+            "minimum": 0,
+            "nullable": true,
+            "type": "number"
+          },
+          "privacyAcknowledged": {
+            "description": "Privacy notice acknowledged",
+            "type": "boolean"
+          },
+          "prompt": {
+            "description": "Fixed prompt template (read-only, from server constant)",
+            "type": "string"
+          },
+          "promptVersion": {
+            "description": "Prompt version",
+            "type": "string"
+          },
+          "provider": {
+            "description": "Vision model protocol",
+            "enum": [
+              "openai-compatible"
+            ],
+            "type": "string"
+          },
+          "strategyHint": {
+            "description": "Editable strategy hint appended to the fixed template",
+            "type": "string"
+          },
+          "temperature": {
+            "description": "Fixed to 0 for reproducibility",
+            "format": "double",
+            "maximum": 0,
+            "minimum": 0,
+            "type": "number"
+          },
+          "timeoutMs": {
+            "description": "Per-request timeout in ms",
+            "maximum": 120000,
+            "minimum": 1000,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "allowedHosts",
+          "autoDisableOnLimit",
+          "baseURL",
+          "cacheTtlDays",
+          "costPer1kInputTokens",
+          "costPer1kOutputTokens",
+          "dailyCallLimitPerUser",
+          "enabled",
+          "fallbackStrategy",
+          "imageQuality",
+          "keepCount",
+          "lowConfidenceThreshold",
+          "maxConcurrency",
+          "maxGroupsPerRequest",
+          "maxImageDimension",
+          "maxImagesPerGroup",
+          "maxTokens",
+          "model",
+          "monthlyBudgetAlert",
+          "privacyAcknowledged",
+          "prompt",
+          "promptVersion",
+          "provider",
+          "strategyHint",
+          "temperature",
+          "timeoutMs"
+        ],
+        "type": "object"
+      },
       "AdminConfigBackupsDto": {
         "properties": {
           "beta": {
@@ -18968,6 +19576,9 @@
       "AdminConfigDto": {
         "description": "Configuration properties that are visible to the admin",
         "properties": {
+          "aiDedup": {
+            "$ref": "#/components/schemas/AdminConfigAiDedupDto"
+          },
           "backup": {
             "$ref": "#/components/schemas/AdminConfigBackupsDto"
           },
@@ -19039,6 +19650,7 @@
           }
         },
         "required": [
+          "aiDedup",
           "backup",
           "ffmpeg",
           "image",
@@ -20164,6 +20776,551 @@
         },
         "required": [
           "isOnboarded"
+        ],
+        "type": "object"
+      },
+      "AiDedupAssetScoreDto": {
+        "properties": {
+          "assetId": {
+            "description": "Asset id",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+            "type": "string"
+          },
+          "confidence": {
+            "format": "double",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          },
+          "decision": {
+            "enum": [
+              "keep",
+              "trash"
+            ],
+            "type": "string"
+          },
+          "defects": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "deleteReason": {
+            "maxLength": 40,
+            "type": "string"
+          },
+          "index": {
+            "description": "1-based shuffled index sent to the model",
+            "maximum": 9007199254740991,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 40,
+            "type": "string"
+          },
+          "recommendedKeep": {
+            "type": "boolean"
+          },
+          "scoreGapToBest": {
+            "format": "double",
+            "maximum": 10,
+            "minimum": 0,
+            "type": "number"
+          },
+          "scores": {
+            "$ref": "#/components/schemas/AiDedupScoresDto"
+          },
+          "source": {
+            "enum": [
+              "ai",
+              "heuristic"
+            ],
+            "type": "string"
+          },
+          "weightedScore": {
+            "format": "double",
+            "maximum": 10,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "assetId",
+          "confidence",
+          "decision",
+          "defects",
+          "deleteReason",
+          "index",
+          "reason",
+          "recommendedKeep",
+          "scoreGapToBest",
+          "scores",
+          "source",
+          "weightedScore"
+        ],
+        "type": "object"
+      },
+      "AiDedupClearResultDto": {
+        "properties": {
+          "cleared": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cleared"
+        ],
+        "type": "object"
+      },
+      "AiDedupCredentialDto": {
+        "properties": {
+          "apiKey": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "apiKey"
+        ],
+        "type": "object"
+      },
+      "AiDedupCredentialStatusDto": {
+        "properties": {
+          "configured": {
+            "type": "boolean"
+          },
+          "masked": {
+            "description": "Masked apiKey, never the plaintext",
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "configured",
+          "masked",
+          "updatedAt"
+        ],
+        "type": "object"
+      },
+      "AiDedupDeleteScoresDto": {
+        "properties": {
+          "includeUsage": {
+            "default": true,
+            "type": "boolean"
+          },
+          "ownerId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AiDedupEvaluateDto": {
+        "properties": {
+          "duplicateIds": {
+            "description": "Duplicate group ids to evaluate",
+            "items": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+              "type": "string"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          },
+          "force": {
+            "default": false,
+            "description": "Bypass the score cache for these groups",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "duplicateIds"
+        ],
+        "type": "object"
+      },
+      "AiDedupEvaluateResponseDto": {
+        "properties": {
+          "degradedCount": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "quota": {
+            "$ref": "#/components/schemas/AiDedupQuotaDto"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AiDedupGroupResultDto"
+            },
+            "type": "array"
+          },
+          "truncatedCount": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "degradedCount",
+          "quota",
+          "results",
+          "truncatedCount"
+        ],
+        "type": "object"
+      },
+      "AiDedupGroupResultDto": {
+        "properties": {
+          "degradeReason": {
+            "nullable": true,
+            "type": "string"
+          },
+          "degraded": {
+            "type": "boolean"
+          },
+          "duplicateId": {
+            "description": "Duplicate group id (existing asset.duplicateId semantics)",
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+            "type": "string"
+          },
+          "generatedAt": {
+            "description": "ISO 8601 UTC",
+            "type": "string"
+          },
+          "indexMap": {
+            "additionalProperties": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+              "type": "string"
+            },
+            "description": "Shuffled 1..N index -> assetId; never sent to the model",
+            "type": "object"
+          },
+          "model": {
+            "type": "string"
+          },
+          "needsManualReview": {
+            "type": "boolean"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "recommendedKeepAssetIds": {
+            "description": "AI recommended keep set; empty when degraded",
+            "items": {
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/AiDedupAssetScoreDto"
+            },
+            "type": "array"
+          },
+          "strategyApplied": {
+            "type": "boolean"
+          },
+          "summary": {
+            "maxLength": 60,
+            "type": "string"
+          },
+          "truncated": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "degradeReason",
+          "degraded",
+          "duplicateId",
+          "generatedAt",
+          "indexMap",
+          "model",
+          "needsManualReview",
+          "promptVersion",
+          "recommendedKeepAssetIds",
+          "results",
+          "strategyApplied",
+          "summary",
+          "truncated"
+        ],
+        "type": "object"
+      },
+      "AiDedupOwnerUsageDto": {
+        "properties": {
+          "calls": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "estimatedCostUsd": {
+            "format": "double",
+            "minimum": 0,
+            "type": "number"
+          },
+          "inputTokens": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "outputTokens": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "ownerId": {
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12})$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "calls",
+          "estimatedCostUsd",
+          "inputTokens",
+          "outputTokens",
+          "ownerId"
+        ],
+        "type": "object"
+      },
+      "AiDedupPromptDefaultsDto": {
+        "properties": {
+          "cacheTtlDays": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "fallbackStrategy": {
+            "type": "string"
+          },
+          "keepCount": {
+            "maximum": 9007199254740991,
+            "minimum": -9007199254740991,
+            "type": "integer"
+          },
+          "lowConfidenceThreshold": {
+            "format": "double",
+            "type": "number"
+          },
+          "promptVersion": {
+            "type": "string"
+          },
+          "strategyHint": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "cacheTtlDays",
+          "fallbackStrategy",
+          "keepCount",
+          "lowConfidenceThreshold",
+          "promptVersion",
+          "strategyHint"
+        ],
+        "type": "object"
+      },
+      "AiDedupPromptDto": {
+        "properties": {
+          "defaults": {
+            "$ref": "#/components/schemas/AiDedupPromptDefaultsDto"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "promptTemplate": {
+            "description": "Full fixed prompt template (read-only)",
+            "type": "string"
+          },
+          "strategySummary": {
+            "type": "string"
+          },
+          "trashEnabled": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "defaults",
+          "enabled",
+          "promptTemplate",
+          "strategySummary",
+          "trashEnabled",
+          "version"
+        ],
+        "type": "object"
+      },
+      "AiDedupPurgeResultDto": {
+        "properties": {
+          "credentialCleared": {
+            "type": "boolean"
+          },
+          "scoresDeleted": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "usageDeleted": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "credentialCleared",
+          "scoresDeleted",
+          "usageDeleted"
+        ],
+        "type": "object"
+      },
+      "AiDedupQuotaDto": {
+        "properties": {
+          "limit": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "used": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "limit",
+          "used"
+        ],
+        "type": "object"
+      },
+      "AiDedupScoresDto": {
+        "properties": {
+          "clarity": {
+            "format": "double",
+            "maximum": 10,
+            "minimum": 0,
+            "type": "number"
+          },
+          "composition": {
+            "format": "double",
+            "maximum": 10,
+            "minimum": 0,
+            "type": "number"
+          },
+          "quality": {
+            "format": "double",
+            "maximum": 10,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "clarity",
+          "composition",
+          "quality"
+        ],
+        "type": "object"
+      },
+      "AiDedupTestConnectionDto": {
+        "properties": {
+          "apiKey": {
+            "type": "string"
+          },
+          "baseURL": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AiDedupTestResultDto": {
+        "properties": {
+          "latencyMs": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "ok": {
+            "type": "boolean"
+          },
+          "reason": {
+            "enum": [
+              "AUTH",
+              "TIMEOUT",
+              "NO_VISION",
+              "NETWORK",
+              "SSRF_BLOCKED",
+              "UNKNOWN"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "latencyMs",
+          "ok"
+        ],
+        "type": "object"
+      },
+      "AiDedupUsageBucketDto": {
+        "properties": {
+          "calls": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "estimatedCostUsd": {
+            "format": "double",
+            "minimum": 0,
+            "type": "number"
+          },
+          "inputTokens": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "outputTokens": {
+            "maximum": 9007199254740991,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "calls",
+          "estimatedCostUsd",
+          "inputTokens",
+          "outputTokens"
+        ],
+        "type": "object"
+      },
+      "AiDedupUsageDto": {
+        "properties": {
+          "byOwner": {
+            "items": {
+              "$ref": "#/components/schemas/AiDedupOwnerUsageDto"
+            },
+            "type": "array"
+          },
+          "month": {
+            "$ref": "#/components/schemas/AiDedupUsageBucketDto"
+          },
+          "today": {
+            "$ref": "#/components/schemas/AiDedupUsageBucketDto"
+          }
+        },
+        "required": [
+          "byOwner",
+          "month",
+          "today"
         ],
         "type": "object"
       },
