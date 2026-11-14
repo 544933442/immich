@@ -60,9 +60,13 @@ const prompt = (overrides: Record<string, unknown> = {}) => ({
   ...overrides,
 });
 
-const runLoad = async () => {
+const runLoad = async (index?: number) => {
   const { load } = await import('./+page.ts');
-  return load({ url: new URL('http://localhost/utilities/duplicates') } as never);
+  const url = new URL('http://localhost/utilities/duplicates');
+  if (index !== undefined) {
+    url.searchParams.set('index', String(index));
+  }
+  return load({ url } as never);
 };
 
 beforeEach(() => {
@@ -180,7 +184,7 @@ describe('D1 启用态（真实 load 两态分别运行）', () => {
   });
 });
 
-describe('分批评估（后端 maxGroupsPerRequest 截断修复）', () => {
+describe('懒评估（页面加载只评可见组，D4）', () => {
   const manyDuplicates = () =>
     Array.from({ length: 25 }, (_, index) => ({
       duplicateId: `g${index + 1}`,
@@ -188,7 +192,7 @@ describe('分批评估（后端 maxGroupsPerRequest 截断修复）', () => {
       assets: [{ id: `k${index + 1}` }, { id: `x${index + 1}` }],
     }));
 
-  it('超过批次上限的组按 20 个一批发送，不再一次性全量提交', async () => {
+  it('25 组时只提交前 3 组，一次请求，避免整库等待', async () => {
     mocks.getAiDedupPrompt.mockResolvedValue(prompt());
     mocks.getAssetDuplicates.mockResolvedValue(manyDuplicates());
     mocks.evaluateAiDedup.mockImplementation(({ aiDedupEvaluateDto }) =>
@@ -201,33 +205,38 @@ describe('分批评估（后端 maxGroupsPerRequest 截断修复）', () => {
 
     const data = await runLoad();
 
-    expect(mocks.evaluateAiDedup).toHaveBeenCalledTimes(2);
+    expect(mocks.evaluateAiDedup).toHaveBeenCalledTimes(1);
     expect(mocks.evaluateAiDedup.mock.calls[0][0]).toEqual({
-      aiDedupEvaluateDto: { duplicateIds: Array.from({ length: 20 }, (_, i) => `g${i + 1}`) },
-    });
-    expect(mocks.evaluateAiDedup.mock.calls[1][0]).toEqual({
-      aiDedupEvaluateDto: { duplicateIds: ['g21', 'g22', 'g23', 'g24', 'g25'] },
+      aiDedupEvaluateDto: { duplicateIds: ['g1', 'g2', 'g3'] },
     });
     expect(data.aiEnabled).toBe(true);
-    expect(Object.keys(data.aiResults)).toHaveLength(25);
+    expect(Object.keys(data.aiResults)).toHaveLength(3);
+    // Groups beyond the window remain on the official heuristic recommendation.
+    expect(data.duplicates[20].suggestedKeepAssetIds).toEqual(['k21']);
   });
 
-  it('某一批失败时其余批次仍然生效，失败批保持启发式预选', async () => {
+  it('URL 带 index 时以当前组为起点预取', async () => {
     mocks.getAiDedupPrompt.mockResolvedValue(prompt());
     mocks.getAssetDuplicates.mockResolvedValue(manyDuplicates());
-    mocks.evaluateAiDedup
-      .mockRejectedValueOnce(new Error('provider timeout'))
-      .mockImplementationOnce(() =>
-        evaluateResponse([aiResult({ duplicateId: 'g21', recommendedKeepAssetIds: ['x21'] })]),
-      );
+    mocks.evaluateAiDedup.mockResolvedValue(evaluateResponse([]));
+
+    await runLoad(10);
+
+    expect(mocks.evaluateAiDedup.mock.calls[0][0]).toEqual({
+      aiDedupEvaluateDto: { duplicateIds: ['g11', 'g12', 'g13'] },
+    });
+  });
+
+  it('评估失败时全部组保持启发式预选，且不会重试', async () => {
+    mocks.getAiDedupPrompt.mockResolvedValue(prompt());
+    mocks.getAssetDuplicates.mockResolvedValue(manyDuplicates());
+    mocks.evaluateAiDedup.mockRejectedValue(new Error('provider timeout'));
 
     const data = await runLoad();
 
-    expect(mocks.evaluateAiDedup).toHaveBeenCalledTimes(2);
-    expect(data.aiEnabled).toBe(true);
-    // Failed batch keeps the official heuristic keep ids.
+    expect(mocks.evaluateAiDedup).toHaveBeenCalledTimes(1);
+    expect(data.aiEnabled).toBe(false);
     expect(data.duplicates[0].suggestedKeepAssetIds).toEqual(['k1']);
-    // The successful batch is merged.
-    expect(data.duplicates[20].suggestedKeepAssetIds).toEqual(['x21']);
+    expect(data.duplicates[24].suggestedKeepAssetIds).toEqual(['k25']);
   });
 });

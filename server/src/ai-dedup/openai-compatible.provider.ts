@@ -1,6 +1,9 @@
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 import { AiDedupErrorCode } from 'src/ai-dedup/dto.js';
+import { AI_DEDUP_DEFAULT_PROMPT } from 'src/ai-dedup/constants.js';
+import { extractJson } from 'src/ai-dedup/parse.js';
+import { renderPrompt } from 'src/ai-dedup/prompt.js';
 import type {
   AiDedupEvaluateInput,
   AiDedupModelConfig,
@@ -214,7 +217,10 @@ export function classifyProviderError(error: unknown, status?: number): AiDedupE
 const delay = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
 interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: unknown } }>;
+  choices?: Array<{
+    finish_reason?: string;
+    message?: { content?: unknown; reasoning_content?: unknown };
+  }>;
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 }
 
@@ -238,22 +244,49 @@ export class OpenAiCompatibleProvider implements AiDedupProvider {
       return { ok: false, reason: 'SSRF_BLOCKED', latencyMs: Date.now() - started };
     }
 
+    // Real capability probe. The previous lightweight 1-image / 64-token probe passed on
+    // reasoning models (e.g. DeepSeek) whose actual evaluations then returned empty
+    // content for every group. Mirror the real evaluation shape so a broken model is
+    // caught in settings instead of after a page full of slow, empty calls.
+    const images: AiDedupEvaluateInput['images'] = [
+      { index: 1, base64Jpeg: TEST_IMAGE_BASE64 },
+      { index: 2, base64Jpeg: TEST_IMAGE_BASE64 },
+    ];
     const input: AiDedupEvaluateInput = {
       ...config,
       temperature: 0,
-      timeoutMs: Math.min(config.timeoutMs, 15_000),
-      maxTokens: Math.min(config.maxTokens, 64),
-      systemPrompt: '你是连通性探测助手。只输出一个合法 json 对象：{"ok":true}。',
-      userPrompt: '这是一张 32x32 测试图，用于验证模型是否支持图片输入。只输出 {"ok":true}。',
-      images: [{ index: 1, base64Jpeg: TEST_IMAGE_BASE64 }],
+      timeoutMs: config.timeoutMs,
+      maxTokens: Math.max(config.maxTokens, 512),
+      systemPrompt: renderPrompt(AI_DEDUP_DEFAULT_PROMPT, {
+        assetCount: images.length,
+        keepCount: 1,
+        strategyHint: '',
+      }),
+      userPrompt: `本组共 ${images.length} 张照片，按编号 1..${images.length} 评估；请按系统提示输出一个合法 JSON 对象。`,
+      images,
     };
 
     try {
       const url = `${config.baseURL.replace(/\/+$/u, '')}/chat/completions`;
-      await this.perform(url, input, credential);
+      const response = await this.perform(url, input, credential);
+      let parsed: { results?: unknown };
+      try {
+        parsed = JSON.parse(extractJson(response.content)) as { results?: unknown };
+      } catch {
+        return { ok: false, reason: 'NO_VISION', latencyMs: Date.now() - started };
+      }
+      if (!Array.isArray(parsed.results) || parsed.results.length !== images.length) {
+        return { ok: false, reason: 'NO_VISION', latencyMs: Date.now() - started };
+      }
       return { ok: true, latencyMs: Date.now() - started };
     } catch (error) {
-      return { ok: false, reason: this.toTestReason(error), latencyMs: Date.now() - started };
+      const truncated =
+        error instanceof AiDedupProviderError && error.code === AiDedupErrorCode.OutputTruncated;
+      return {
+        ok: false,
+        reason: truncated ? 'NO_VISION' : this.toTestReason(error),
+        latencyMs: Date.now() - started,
+      };
     }
   }
 
@@ -303,9 +336,18 @@ export class OpenAiCompatibleProvider implements AiDedupProvider {
         }
 
         const body = (await response.json()) as ChatCompletionResponse;
-        const content = body.choices?.[0]?.message?.content;
-        if (typeof content !== 'string') {
-          throw new AiDedupProviderError(AiDedupErrorCode.InvalidResponse, 'Missing chat completion content');
+        const choice = body.choices?.[0];
+        const content = choice?.message?.content;
+        // Reasoning models can spend the entire `max_tokens` budget on hidden
+        // chain-of-thought and return an empty `content` with finish_reason=length.
+        // Detect it here so the whole batch can degrade fast instead of burning
+        // the same slow, empty call once per group.
+        if (choice?.finish_reason === 'length' || typeof content !== 'string' || content.trim() === '') {
+          throw new AiDedupProviderError(
+            AiDedupErrorCode.OutputTruncated,
+            'Provider returned an empty or truncated completion',
+            response.status,
+          );
         }
         return {
           content,

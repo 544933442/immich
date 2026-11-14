@@ -172,13 +172,15 @@ export interface AiDedupCacheKeyInput {
   maxImageDimension: number;
   imageQuality: number;
   temperature: number;
+  /** [ai-dedup] Changing the token budget can turn a truncated (empty) response into a valid one. */
+  maxTokens: number;
   memberHash: string;
   ownerId: string;
   /** [ai-dedup] Changes `needsManualReview` and therefore the persisted recommendation set. */
   lowConfidenceThreshold: number;
 }
 
-/** The 14-dimension cache key (technical design §3.3.3 + lowConfidenceThreshold); a 64-char sha256 hex string. */
+/** The 15-dimension cache key (technical design §3.3.3 + lowConfidenceThreshold + maxTokens); a 64-char sha256 hex string. */
 export function buildAiDedupCacheKey(input: AiDedupCacheKeyInput): string {
   return sha256(
     [
@@ -193,6 +195,7 @@ export function buildAiDedupCacheKey(input: AiDedupCacheKeyInput): string {
       String(input.maxImageDimension),
       String(input.imageQuality),
       String(input.temperature),
+      String(input.maxTokens),
       input.memberHash,
       input.ownerId,
       String(input.lowConfidenceThreshold),

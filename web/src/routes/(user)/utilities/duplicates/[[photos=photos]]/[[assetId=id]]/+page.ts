@@ -17,6 +17,9 @@ import { getAssetDuplicates } from '@immich/sdk';
 // [ai-dedup]
 import type { PageLoad } from './$types';
 
+/** [ai-dedup] Number of groups evaluated on page load; the rest are evaluated on navigation. */
+export const AI_DEDUP_INITIAL_GROUPS = 3;
+
 export const load = (async ({ url }) => {
   await authenticate(url);
   const duplicates = await getAssetDuplicates();
@@ -34,15 +37,18 @@ export const load = (async ({ url }) => {
     // [ai-dedup] An unavailable state endpoint is treated as "feature disabled".
   } // [ai-dedup]
   if (aiPrompt?.enabled) {
-    // [ai-dedup] Evaluate in batches: the backend caps each request at
-    // maxGroupsPerRequest (default 20) and the DTO caps duplicateIds at 100, so
-    // sending every group at once is either silently truncated (21+ groups) or
-    // rejected outright (100+ groups), which used to disable the whole feature.
+    // [ai-dedup] Evaluate ONLY the group currently on screen plus a small prefetch
+    // window (technical design D4). A library can hold hundreds of duplicate groups;
+    // evaluating all of them during page load made every reload wait for a full batch
+    // of slow model calls. Other groups are evaluated lazily as the user navigates.
     const allIds = duplicates.map(({ duplicateId }) => duplicateId);
+    const currentIndexParam = Number(url.searchParams.get('index') ?? '0');
+    const startIndex = Number.isFinite(currentIndexParam) ? Math.max(0, Math.trunc(currentIndexParam)) : 0;
+    const initialIds = allIds.slice(startIndex, startIndex + AI_DEDUP_INITIAL_GROUPS);
     const batchSize = 20;
     const allResults: AiDedupGroupResultDto[] = [];
-    for (let start = 0; start < allIds.length; start += batchSize) {
-      const batch = allIds.slice(start, start + batchSize);
+    for (let start = 0; start < initialIds.length; start += batchSize) {
+      const batch = initialIds.slice(start, start + batchSize);
       try {
         // [ai-dedup]
         const evaluated = await evaluateAiDedup({

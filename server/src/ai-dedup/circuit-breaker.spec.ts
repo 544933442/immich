@@ -24,6 +24,7 @@ const cacheKeyInput = (overrides: Partial<AiDedupCacheKeyInput> = {}): AiDedupCa
   maxImageDimension: 1024,
   imageQuality: 80,
   temperature: 0,
+  maxTokens: 800,
   memberHash: 'member-hash',
   ownerId: '00000000-0000-4000-8000-000000000001',
   lowConfidenceThreshold: 0.5,
@@ -160,6 +161,7 @@ describe('buildAiDedupCacheKey (14 dimensions)', () => {
       { maxImageDimension: 512 },
       { imageQuality: 60 },
       { temperature: 0.1 },
+      { maxTokens: 1600 },
       { memberHash: 'different-members' },
       { ownerId: '00000000-0000-4000-8000-000000000002' },
       // The threshold decides needsManualReview and therefore the stored recommendation set.

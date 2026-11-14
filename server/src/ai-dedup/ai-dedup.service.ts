@@ -66,9 +66,16 @@ export class AiDedupService extends BaseService {
 
   private readonly provider: AiDedupProvider = new OpenAiCompatibleProvider();
   private readonly breaker = new CircuitBreaker(5, 60_000);
-  private semaphore = new Semaphore(2);
-  private semaphoreMax = 2;
+  private semaphore = new Semaphore(4);
+  private semaphoreMax = 4;
   private credentialStore: AiDedupCredentialStore | null = null;
+  /**
+  [ai-dedup] A capability mismatch (reasoning model exhausting max_tokens, or a
+  text-only model) is not transient: retrying it once per group is slow and costly.
+  Suppress further external calls for the same configuration briefly; changing
+  baseURL/model/maxTokens/prompt clears the suppression immediately.
+  */
+  private capabilityFailure: { fingerprint: string; at: number; code: AiDedupErrorCode } | null = null;
 
   private get credentials(): AiDedupCredentialStore {
     this.credentialStore ??= new AiDedupCredentialStore(this.systemMetadataRepository);
@@ -242,6 +249,7 @@ export class AiDedupService extends BaseService {
           maxImageDimension: config.maxImageDimension,
           imageQuality: config.imageQuality,
           temperature: config.temperature,
+          maxTokens: config.maxTokens,
           memberHash: buildMemberHash(group.rawAssets, pathsByGroup.get(group.duplicateId) ?? []),
           ownerId,
           // [ai-dedup] The threshold decides needsManualReview and therefore the stored
@@ -305,7 +313,13 @@ export class AiDedupService extends BaseService {
       // external calls; already-cached results were returned above (E5: cache hits are free).
       const quotaExhausted = isQuotaExceeded(used, config.dailyCallLimitPerUser);
       const breakerBlocked = !this.breaker.canRequest();
-      if (quotaExhausted || breakerBlocked) {
+      const capabilityCode = this.activeCapabilityFailure(config);
+      if (capabilityCode) {
+        // [ai-dedup] Zero external calls for a known-bad model configuration.
+        results.push(
+          ...pending.map((group) => buildDegradedResult(this.resultBase(group, config), capabilityCode)),
+        );
+      } else if (quotaExhausted || breakerBlocked) {
         if (quotaExhausted && config.autoDisableOnLimit) {
           this.breaker.forceOpen();
         }
@@ -379,6 +393,30 @@ export class AiDedupService extends BaseService {
       assets: group.assets,
       model: config.model,
       promptVersion: config.promptVersion,
+    };
+  }
+
+  private capabilityFingerprint(config: AiDedupConfig): string {
+    return [config.baseURL, config.model, config.maxTokens, config.promptVersion].join('|');
+  }
+
+  private activeCapabilityFailure(config: AiDedupConfig): AiDedupErrorCode | null {
+    const failure = this.capabilityFailure;
+    if (!failure || failure.fingerprint !== this.capabilityFingerprint(config)) {
+      return null;
+    }
+    return Date.now() - failure.at < 60_000 ? failure.code : null;
+  }
+
+  private markCapabilityFailure(config: AiDedupConfig, code: AiDedupErrorCode): void {
+    if (code !== AiDedupErrorCode.OutputTruncated && code !== AiDedupErrorCode.ModelNoVision) {
+      return;
+    }
+    this.logger.warn(`[ai-dedup] suppressing further external calls for this configuration: ${code}`);
+    this.capabilityFailure = {
+      fingerprint: this.capabilityFingerprint(config),
+      at: Date.now(),
+      code,
     };
   }
 
@@ -513,6 +551,7 @@ limit is the atomic `tryConsumeCall` reservation inside `evaluateOne`.
 
       if (!outcome.ok) {
         this.breaker.recordFailure();
+        this.markCapabilityFailure(config, outcome.code);
         // [ai-dedup] Persist the failure briefly so the model is not re-billed on the
         // next page load; the short TTL reuse lives in the isUsable check above.
         const degraded = buildDegradedResult(base, outcome.code);
@@ -527,6 +566,7 @@ limit is the atomic `tryConsumeCall` reservation inside `evaluateOne`.
       const code =
         error instanceof AiDedupProviderError ? error.code : AiDedupErrorCode.ProviderError;
       this.breaker.recordFailure();
+      this.markCapabilityFailure(config, code);
       // Only the classification/category is logged: no apiKey, headers, images or response body.
       this.logger.warn(`[ai-dedup] group ${group.duplicateId} degraded: ${code}`);
       const degraded = buildDegradedResult(base, code);

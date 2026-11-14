@@ -12,6 +12,13 @@ export enum AiDedupErrorCode {
   QuotaExceeded = 'QUOTA_EXCEEDED',
   Timeout = 'TIMEOUT',
   InvalidResponse = 'INVALID_RESPONSE',
+  /**
+  [ai-dedup] The provider returned an empty / truncated completion. Reasoning models
+  (e.g. DeepSeek) can consume the whole `max_tokens` budget on hidden chain-of-thought,
+  leaving `content` empty. This is a capability/configuration mismatch, not a transient
+  failure: the whole batch should degrade immediately instead of retrying every group.
+  */
+  OutputTruncated = 'OUTPUT_TRUNCATED',
   ProviderError = 'PROVIDER_ERROR',
   ModelNoVision = 'MODEL_NO_VISION',
   SsrfBlocked = 'SSRF_BLOCKED',

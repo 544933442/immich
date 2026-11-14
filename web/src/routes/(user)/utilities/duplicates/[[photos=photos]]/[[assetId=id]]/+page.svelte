@@ -20,7 +20,14 @@
   } from '#lib/utils/ai-dedup.ts';
   // [ai-dedup]
   import { handleError } from '#lib/utils/handle-error.ts';
-  import { createStack, deleteDuplicates, resolveDuplicates, updateAssets, type AssetResponseDto } from '@immich/sdk';
+  import {
+    createStack,
+    deleteDuplicates,
+    evaluateAiDedup,
+    resolveDuplicates,
+    updateAssets,
+    type AssetResponseDto,
+  } from '@immich/sdk';
   import { Button, HStack, IconButton, Text, modalManager, toastManager } from '@immich/ui';
   import {
     mdiCheckOutline,
@@ -242,6 +249,52 @@
     Object.assign(aiView.byAssetId, buildAiDedupViewContext({ [result.duplicateId]: result }, true).byAssetId); // [ai-dedup]
   };
 
+  // [ai-dedup] Lazy evaluation: page load only scores the visible group + a small
+  // prefetch window. Navigating to an unscored group triggers a single-group call,
+  // so opening the duplicates page never waits for the whole library (hundreds of
+  // groups) to be evaluated.
+  const aiInFlight: Record<string, true> = {}; // [ai-dedup]
+  let aiNavigationToken = 0; // [ai-dedup]
+  $effect(() => {
+    // [ai-dedup]
+    if (!data.aiEnabled) {
+      // [ai-dedup]
+      return;
+    } // [ai-dedup]
+    const targets = duplicates.slice(duplicatesIndex, duplicatesIndex + 2); // [ai-dedup]
+    const missing = targets.filter(
+      ({ duplicateId }) => !Object.hasOwn(aiResults, duplicateId) && !Object.hasOwn(aiInFlight, duplicateId),
+    ); // [ai-dedup]
+    if (missing.length === 0) {
+      // [ai-dedup]
+      return;
+    } // [ai-dedup]
+    const token = ++aiNavigationToken; // [ai-dedup]
+    for (const { duplicateId } of missing) {
+      // [ai-dedup]
+      aiInFlight[duplicateId] = true; // [ai-dedup]
+      void (async () => {
+        // [ai-dedup]
+        try {
+          // [ai-dedup]
+          const response = await evaluateAiDedup({ aiDedupEvaluateDto: { duplicateIds: [duplicateId] } }); // [ai-dedup]
+          if (token === aiNavigationToken) {
+            // [ai-dedup]
+            for (const result of response.results) {
+              // [ai-dedup]
+              applyReevaluatedGroup(result); // [ai-dedup]
+            } // [ai-dedup]
+          } // [ai-dedup]
+        } catch {
+          // [ai-dedup] Keep the official heuristic recommendation when AI is unavailable.
+        } finally {
+          // [ai-dedup]
+          delete aiInFlight[duplicateId]; // [ai-dedup]
+        } // [ai-dedup]
+      })(); // [ai-dedup]
+    } // [ai-dedup]
+  }); // [ai-dedup]
+
   // [ai-dedup] Append a "go to trash" toast after an AI-assisted bulk cleanup.
   let aiPreviousCount = data.duplicates.length; // [ai-dedup]
   $effect(() => {
@@ -259,18 +312,17 @@
   // handler only swaps the confirmation copy and adds the R-11 acknowledgement,
   // while still deleting exclusively through the existing resolveDuplicates.
   const handleAiDeduplicateAll = async () => {
-    // [ai-dedup] Q12 hard gate at the deletion layer (defense in depth on top of
-    // mergeAiKeepIds): groups the AI evaluated successfully but flagged for manual
-    // review are SKIPPED by bulk cleanup, and a group with no keep candidate is
-    // never sent to resolve — at least one asset must survive every group.
+    // [ai-dedup] Q12 hard gate at the deletion layer. Only groups with a successful,
+    // non-degraded AI evaluation may be bulk-cleaned: with lazy evaluation most groups
+    // are still heuristic-only and must never be deleted on AI's behalf.
     const groupsToResolve = duplicates.filter((group) => {
       // [ai-dedup]
-      const result = aiResults[group.duplicateId];
-      if (result && !result.degraded && result.needsManualReview) {
+      const result = aiResults[group.duplicateId]; // [ai-dedup]
+      if (!result || result.degraded || result.needsManualReview) {
         // [ai-dedup]
         return false;
-      }
-      return group.suggestedKeepAssetIds.length > 0;
+      } // [ai-dedup]
+      return result.recommendedKeepAssetIds.length > 0 && group.suggestedKeepAssetIds.length > 0;
     });
     const skippedCount = duplicates.length - groupsToResolve.length;
 
