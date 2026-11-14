@@ -97,6 +97,19 @@
     }
   };
 
+  // [ai-dedup] Turn raw reason enums (e.g. NO_VISION) into an actionable message.
+  // Static keys keep svelte-i18n's literal-key type happy.
+  const testReasonKeys = {
+    AUTH: 'ai_dedup_test_reason_auth',
+    TIMEOUT: 'ai_dedup_test_reason_timeout',
+    NO_VISION: 'ai_dedup_test_reason_no_vision',
+    NETWORK: 'ai_dedup_test_reason_network',
+    SSRF_BLOCKED: 'ai_dedup_test_reason_ssrf_blocked',
+    UNKNOWN: 'ai_dedup_test_reason_unknown',
+  } as const;
+  const testReasonLabel = (reason = 'UNKNOWN') =>
+    $t(testReasonKeys[reason as keyof typeof testReasonKeys] ?? testReasonKeys.UNKNOWN);
+
   const testConnection = async () => {
     busy = true;
     try {
@@ -111,7 +124,7 @@
         },
       });
     } catch (error) {
-      handleError(error, $t('ai_dedup_test_failed', { values: { reason: 'UNKNOWN' } }));
+      handleError(error, $t('ai_dedup_test_failed', { values: { reason: testReasonLabel('UNKNOWN') } }));
       testResult = { ok: false, latencyMs: 0 };
     } finally {
       busy = false;
@@ -234,7 +247,7 @@
           <p class="text-[12px] {testResult.ok ? 'text-[#0ea5a4]' : 'text-[#e8734a]'}">
             {testResult.ok
               ? $t('ai_dedup_test_success', { values: { latency: testResult.latencyMs } })
-              : $t('ai_dedup_test_failed', { values: { reason: testResult.reason ?? 'UNKNOWN' } })}
+              : $t('ai_dedup_test_failed', { values: { reason: testReasonLabel(testResult.reason) } })}
           </p>
         {/if}
 

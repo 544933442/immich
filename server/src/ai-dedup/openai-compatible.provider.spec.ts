@@ -1,5 +1,7 @@
+import sharp from 'sharp';
 import { describe, expect, it } from 'vitest';
 import {
+  TEST_IMAGE_BASE64,
   classifyProviderError,
   hostMatches,
   isBlockedHostname,
@@ -7,6 +9,17 @@ import {
   validateBaseUrl,
 } from 'src/ai-dedup/openai-compatible.provider.js';
 import { AiDedupErrorCode } from 'src/ai-dedup/dto.js';
+
+describe('testConnection probe image', () => {
+  it('is a valid, non-degenerate JPEG accepted by vision providers', async () => {
+    // Degenerate 1x1 images are rejected by providers such as DeepSeek with
+    // "unsupported image" (HTTP 400), which was misreported as NO_VISION.
+    const metadata = await sharp(Buffer.from(TEST_IMAGE_BASE64, 'base64')).metadata();
+    expect(metadata.format).toBe('jpeg');
+    expect(metadata.width).toBeGreaterThanOrEqual(16);
+    expect(metadata.height).toBeGreaterThanOrEqual(16);
+  });
+});
 
 describe('hostMatches', () => {
   it('supports exact and wildcard allowlist entries', () => {

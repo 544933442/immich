@@ -11,11 +11,14 @@ import type {
 } from 'src/ai-dedup/provider.interface.js';
 
 /**
-A 1x1 grey JPEG used only by `testConnection`. No real user photo ever leaves the server
+A 32x32 solid-colour JPEG (generated with sharp) used only by `testConnection`.
+Some providers (e.g. DeepSeek) reject degenerate 1x1 images with
+"unsupported image" / "invalid base64 data" and return HTTP 400, which would
+be misclassified as NO_VISION. No real user photo ever leaves the server
 during a connectivity probe (technical design §8.1 / E7).
 */
-const TEST_IMAGE_BASE64 =
-  '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwcJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPDs0NDT/wAALCAABAAEBAREA/8QAFAABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AmAA//9k=';
+export const TEST_IMAGE_BASE64 =
+  '/9j/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAgACADASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFgEBAQEAAAAAAAAAAAAAAAAAAAYH/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8AqAz9cAAAAAAP/9k=';
 
 const CLOUD_METADATA_HOSTS = new Set<string>([
   'metadata.google.internal',
@@ -240,8 +243,8 @@ export class OpenAiCompatibleProvider implements AiDedupProvider {
       temperature: 0,
       timeoutMs: Math.min(config.timeoutMs, 15_000),
       maxTokens: Math.min(config.maxTokens, 64),
-      systemPrompt: '你是连通性探测助手。只输出一个合法 JSON 对象：{"ok":true}。',
-      userPrompt: '这是一张 1x1 测试图，用于验证模型是否支持图片输入。只输出 {"ok":true}。',
+      systemPrompt: '你是连通性探测助手。只输出一个合法 json 对象：{"ok":true}。',
+      userPrompt: '这是一张 32x32 测试图，用于验证模型是否支持图片输入。只输出 {"ok":true}。',
       images: [{ index: 1, base64Jpeg: TEST_IMAGE_BASE64 }],
     };
 
