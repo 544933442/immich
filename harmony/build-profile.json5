@@ -1,11 +1,27 @@
 {
   "app": {
+    "signingConfigs": [
+      {
+        "name": "release",
+        "type": "HarmonyOS",
+        "material": {
+          "storeFile": "/Users/yyzh999/workspace/immich/harmony/signing/immich-release.p12",
+          "storePassword": "000000280D932B65F957CF5BB9396650C2D9F3CBD662A31D5CB693C5BA834155DFFACA25F8C162256631EF9ECC2A298097621E1F64CDCAB6",
+          "keyAlias": "immich-release",
+          "keyPassword": "00000028242F20B4DACFA9E0FE76F36801FE6811CB4C9CB84E0A55BCA8EA7E127202FB126471EEB8469410D4D8DD4CC31F394F16BE48759D",
+          "signAlg": "SHA256withECDSA",
+          "profile": "/Users/yyzh999/workspace/immich/harmony/signing/immich_releaseRelease.p7b",
+          "certpath": "/Users/yyzh999/workspace/immich/harmony/signing/immich_release.cer"
+        }
+      }
+    ],
     "products": [
       {
         "name": "default",
         "targetSdkVersion": "26.0.0",
         "compatibleSdkVersion": "26.0.0",
         "runtimeOS": "HarmonyOS",
+        "signingConfig": "release",
         "buildOption": {
           "strictMode": {
             "caseSensitiveCheck": true,
