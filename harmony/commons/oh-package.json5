@@ -1,0 +1,9 @@
+{
+  "name": "commons",
+  "version": "1.0.0",
+  "description": "Immich commons: theme, utils, image cache, thumbhash",
+  "main": "Index.ets",
+  "author": "",
+  "license": "AGPL-3.0",
+  "dependencies": {}
+}

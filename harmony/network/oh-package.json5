@@ -1,0 +1,9 @@
+{
+  "name": "network",
+  "version": "1.0.0",
+  "description": "Immich network: http client and server API",
+  "main": "Index.ets",
+  "author": "",
+  "license": "AGPL-3.0",
+  "dependencies": {}
+}

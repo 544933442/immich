@@ -1,0 +1,9 @@
+{
+  "module": {
+    "name": "backup",
+    "type": "har",
+    "deviceTypes": [
+      "phone"
+    ]
+  }
+}
